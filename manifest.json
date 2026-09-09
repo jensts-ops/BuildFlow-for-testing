@@ -1,0 +1,9 @@
+{
+  "name": "Buildflow",
+  "short_name": "Buildflow",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#090d0b",
+  "theme_color": "#090d0b"
+}

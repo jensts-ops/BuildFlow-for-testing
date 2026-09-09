@@ -1,0 +1,1533 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#101412">
+<title>Buildflow</title>
+<style>
+:root{--bg:#0c120f;--surface:#141c17;--surface2:#1b251f;--surface3:#243029;--line:#2b3730;--line2:#405045;--text:#eef2eb;--soft:#c7cec6;--muted:#8e9a91;--amber:#9fcf8f;--amber2:#7eae70;--sage:#a8d7ad;--sage2:#304d38;--danger:#dd8a86;--cream:#e9eee7;--shadow:0 16px 44px rgba(0,0,0,.22)}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:#070a09;color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text",Inter,Arial,sans-serif}
+body{overflow-x:hidden}
+button,input,textarea,select{font:inherit}
+button{cursor:pointer}
+button:disabled{opacity:.45;cursor:not-allowed}
+.app{min-height:100vh;display:flex;justify-content:center;background:radial-gradient(circle at 50% -8%,#1b241e 0,#101412 34%,#070a09 100%)}
+.phone{width:100%;max-width:430px;min-height:100vh;background:var(--bg);position:relative;overflow-x:hidden}
+/* iPhone safe-area: keep the Dynamic Island/status area filled with the same dark tone as the bottom menu bar. */
+.phone::before{content:"";position:absolute;left:0;right:0;top:0;height:env(safe-area-inset-top,0px);background:#090d0b;z-index:0;pointer-events:none}
+.screen{position:relative;z-index:1;min-height:100vh;padding:calc(25px + env(safe-area-inset-top,0px)) 20px calc(96px + env(safe-area-inset-bottom,0px))}.hidden{display:none!important}
+.brand{display:flex;align-items:center;gap:8px}.brand-mark{width:9px;height:9px;border-radius:3px;background:var(--amber);transform:rotate(45deg)}.brand-name{font-size:11px;letter-spacing:.2em;font-weight:800;color:#eee7d7}
+.home-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px}.home-header h1{font-size:31px;letter-spacing:-.8px;margin:11px 0 6px}.home-header p{margin:0;color:var(--muted);font-size:13px;line-height:1.45}
+.icon-btn{width:40px;height:40px;border:1px solid var(--line);background:#141b17;border-radius:13px;color:var(--soft)}
+.summary{padding:18px;border:1px solid var(--line);border-radius:21px;background:linear-gradient(145deg,#1b221d,#141917);box-shadow:var(--shadow);margin-bottom:18px}
+.summary-top{display:flex;justify-content:space-between;align-items:flex-end}.kicker{font-size:10px;text-transform:uppercase;letter-spacing:.13em;color:var(--muted)}.summary-number{font-size:34px;font-weight:780;letter-spacing:-1px;margin-top:3px}.summary-status{font-size:11px;color:var(--muted);padding-bottom:4px}
+.summary-bar{height:8px;background:#2a332f;border-radius:99px;overflow:hidden;margin:13px 0 15px}.summary-bar span{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--amber),var(--sage));border-radius:99px;transition:width .3s}
+.summary-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.summary-stats strong{display:block;font-size:15px}.summary-stats span{display:block;color:var(--muted);font-size:10px;margin-top:3px}
+.toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px}.tabs{display:flex;gap:4px;padding:3px;background:#141a17;border:1px solid #2d3631;border-radius:14px}.tab{height:38px;min-width:100px;border:0;border-radius:10px;background:transparent;color:#8e9891;font-size:12px;font-weight:700}.tab.active{background:#2a312b;color:#eadbbd}
+.sort{border:0;background:transparent;color:var(--muted);font-size:12px;padding:7px 0}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+.card{background:var(--surface);border:1px solid #27322c;border-radius:18px;overflow:hidden;box-shadow:0 12px 28px rgba(0,0,0,.16);transition:.16s;cursor:pointer}.card:hover{transform:translateY(-2px);border-color:#3e4a43}.card:active{transform:scale(.985)}
+.cover{height:118px;position:relative;overflow:hidden;background:linear-gradient(135deg,#2a3a31,#637b66)}.cover.slate{background:linear-gradient(135deg,#2a343b,#697985)}.cover.amber{background:linear-gradient(135deg,#493626,#b98853)}.cover.sage{background:linear-gradient(135deg,#314332,#7b9870)}.cover.rose{background:linear-gradient(135deg,#443233,#8a6567)}.cover.sky{background:linear-gradient(135deg,#2b3b47,#698398)}.photo{width:100%;height:100%;object-fit:cover;display:block}.no-photo{
+  position:relative;
+  display:grid;
+  place-items:center;
+  height:100%;
+  overflow:hidden;
+  color:rgba(239,231,215,.48);
+  font-size:10px;
+  letter-spacing:.05em;
+  background:
+    radial-gradient(circle at 74% 24%,rgba(183,201,185,.08) 0 30px,transparent 31px),
+    radial-gradient(circle at 24% 78%,rgba(145,168,148,.06) 0 38px,transparent 39px),
+    linear-gradient(135deg,#27352c,#3f5246);
+}
+.no-photo::before{
+  content:"";
+  position:absolute;
+  width:104px;height:78px;left:-18px;top:-22px;
+  border-radius:58% 42% 50% 50% / 48% 61% 39% 52%;
+  background:rgba(17,30,23,.30);
+  transform:rotate(-12deg);
+}
+.no-photo::after{
+  content:"";
+  position:absolute;
+  width:98px;height:104px;right:-30px;bottom:-36px;
+  border:1px solid rgba(201,216,203,.10);
+  border-radius:44% 56% 60% 40% / 52% 46% 54% 48%;
+  transform:rotate(18deg);
+}
+.no-photo span{
+  position:relative;
+  z-index:2;
+  padding:6px 9px;
+  border:1px solid rgba(224,233,223,.10);
+  border-radius:999px;
+  background:rgba(14,23,18,.20);
+}.badge{position:absolute;right:10px;top:10px;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:var(--sage);color:#102016;font-weight:800}
+.body{padding:13px}.body h3{font-size:14px;margin:0 0 9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.meta{display:flex;justify-content:space-between;gap:8px;color:var(--muted);font-size:10.5px}.card-progress{height:4px;background:#29322e;border-radius:99px;overflow:hidden;margin-top:10px}.card-progress span{display:block;height:100%;background:linear-gradient(90deg,var(--amber),var(--sage));border-radius:99px}.date-meta{display:flex;justify-content:space-between;border-top:1px solid #29322e;margin-top:9px;padding-top:9px;color:var(--muted);font-size:10px}.date-meta b{color:#cdd2cc;font-weight:650}
+.create{grid-column:1/-1;height:112px;border:1px dashed #48534b;border-radius:18px;background:transparent;color:#d3d8d1;display:grid;place-items:center}.create .plus{font-size:34px;color:var(--amber);line-height:24px}.create .label{font-size:12px;margin-top:7px}
+.empty{grid-column:1/-1;text-align:center;padding:38px 18px;border:1px dashed #39443e;border-radius:18px;background:#131915}.empty strong{display:block;font-size:14px;color:#dce1db;margin-bottom:5px}.empty span{font-size:12px;color:var(--muted)}
+
+.bottom{position:fixed;left:50%;bottom:0;transform:translateX(-50%);width:100%;max-width:430px;height:calc(68px + env(safe-area-inset-bottom,0px));background:rgba(9,13,11,.97);border-top:1px solid #202923;display:flex;justify-content:center;gap:90px;padding-top:9px;padding-bottom:env(safe-area-inset-bottom,0px);box-sizing:border-box;z-index:50}.nav{border:0;background:transparent;color:#7f8982;font-size:10px;display:flex;flex-direction:column;align-items:center;gap:4px;min-width:48px}.nav.active{color:var(--amber)}.nav span{font-size:21px}
+
+.route{display:flex;align-items:center;gap:10px;margin-bottom:15px}.home-btn{width:40px;height:40px;border:1px solid var(--line);background:#151c18;border-radius:13px;color:var(--cream);font-size:20px}.route-wrap{min-width:0;flex:1}.route-kicker{font-size:10px;text-transform:uppercase;letter-spacing:.13em;color:var(--muted);margin-bottom:2px}.route-name{font-size:21px;font-weight:760;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hero{border:1px solid var(--line);border-radius:21px;overflow:hidden;background:linear-gradient(145deg,#1b221d,#141917);box-shadow:var(--shadow);margin-bottom:14px}.hero-cover{height:150px;background:#1f2923}.hero-cover img{width:100%;height:100%;object-fit:cover}.hero-empty{height:100%;display:grid;place-items:center;color:#78837b;font-size:12px}.hero-body{padding:17px}.hero-body h2{margin:0 0 7px;font-size:23px;letter-spacing:-.4px}.hero-body p{margin:0;color:var(--muted);font-size:12.5px;line-height:1.45}.detail-date{display:flex;justify-content:space-between;margin-top:14px;padding-top:12px;border-top:1px solid #29322e;font-size:11px}.detail-date span{color:var(--muted)}.detail-date b{font-weight:650;color:#dcded8}.detail-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}.detail-stat{background:#1c2520;border-radius:12px;padding:10px}.detail-stat b{font-size:15px}.detail-stat small{display:block;color:var(--muted);font-size:9.5px;margin-top:3px}
+.detail-tabs{display:flex;gap:4px;padding:3px;background:#141a17;border:1px solid #2d3631;border-radius:14px;margin-bottom:14px}.detail-tab{flex:1;height:38px;border:0;background:transparent;border-radius:10px;color:#8f9993;font-size:11px;font-weight:700}.detail-tab.active{background:#2b322d;color:#eadfca;box-shadow:inset 0 0 0 1px rgba(217,168,97,.14)}
+.focus{border:1px solid #455047;background:linear-gradient(145deg,#1a211d,#131815);border-radius:17px;padding:16px;margin-bottom:15px;box-shadow:0 10px 25px rgba(0,0,0,.12);position:relative;overflow:hidden}.focus:before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(var(--amber),var(--sage))}.focus-title{font-size:19px;font-weight:760;line-height:1.2}.focus-sub{font-size:11px;color:var(--muted);margin-top:6px}.focus-btn{margin-top:13px;width:100%;height:49px;border:0;border-radius:13px;background:linear-gradient(180deg,#e1b56c,#ce9f5d);color:#17140f;font-weight:760}.task-list{display:grid;gap:8px}.task{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid #27322c;border-radius:13px;padding:10px 11px}.task.done{background:#151d19}.task-text{flex:1;font-size:12px}.task.done .task-text{text-decoration:line-through;color:#78837b}.check{width:25px;height:25px;border-radius:8px;border:1px solid #556158;background:#19211d;color:#102016;display:grid;place-items:center;padding:0;font-size:13px}.check.done{background:var(--sage);border-color:var(--sage)}
+.project-actions{display:flex;gap:9px;margin-top:15px}.project-actions button{height:44px;border:1px solid var(--line);background:#1b231e;color:#e7ece5;border-radius:12px;padding:0 14px;font-size:11px}.project-actions .danger{color:var(--danger)}
+.shopping{border:1px solid #2f3934;border-radius:17px;background:#171e1a;padding:15px}.shop-summary{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:11px}.shop-summary strong{font-size:21px}.shop-summary small{display:block;color:var(--muted);font-size:10px}.materials{display:grid;gap:4px}.material{display:flex;align-items:center;gap:9px;padding:10px 0;border-bottom:1px solid #29322e}.material:last-child{border-bottom:0}.shop-check{width:26px;height:26px;border-radius:8px;border:1px solid #566259;background:#19211d;color:#102016;display:grid;place-items:center;padding:0;font-weight:800}.shop-check.done{background:var(--sage);border-color:var(--sage)}.material-main{flex:1;min-width:0}.material-name{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.material-info{font-size:10px;color:var(--muted);margin-top:3px}.material-total{font-size:12px;font-weight:650}.material.bought .material-name,.material.bought .material-total{text-decoration:line-through;color:#747f77}.mini-actions{display:flex;gap:3px}.mini-action{border:0;background:transparent;color:#88928b;padding:4px;font-size:16px}.shop-add{width:100%;height:45px;border:1px dashed #465149;border-radius:12px;background:#1b231e;color:#cbd3ca;font-size:12px;margin-top:12px}.costs{border-top:1px solid #2b342f;margin-top:13px;padding-top:11px;display:grid;gap:8px}.cost{display:flex;justify-content:space-between;font-size:11px}.cost span{color:var(--muted)}.over{color:var(--danger)!important}
+
+.editor{border:1px solid #353f39;border-radius:20px;background:linear-gradient(145deg,#181f1b,#131815);padding:18px}.edit-section{border-top:1px solid #2b342f;padding:17px 0}.edit-section:first-child{border-top:0;padding-top:0}.edit-label{display:block;font-size:11px;color:#c5ccc5;margin-bottom:7px}.field{margin-bottom:16px}.edit-photo{display:flex;align-items:center;gap:11px}.edit-preview{width:76px;height:76px;border-radius:14px;border:1px solid #3b4740;background:#1b231e;overflow:hidden;display:grid;place-items:center;color:#7d8780;font-size:10px;text-align:center}.edit-preview img{width:100%;height:100%;object-fit:cover}.photo-actions{display:flex;gap:7px;flex-wrap:wrap}.mini{height:39px;border-radius:11px;border:1px solid #3a453e;background:#202823;color:#d8ddd6;padding:0 11px;font-size:11px}.mini.accent{background:#292a20;border-color:#61563a;color:#ead9b8}.edit-list{display:grid;gap:8px}.edit-row{display:grid;grid-template-columns:27px 1fr 31px;align-items:center;gap:8px;background:#1b231e;border:1px solid #2d3932;border-radius:12px;padding:7px}.edit-row input{height:41px;border:0;background:transparent;padding:7px}.save-row{position:sticky;bottom:0;display:flex;gap:9px;padding-top:15px;background:linear-gradient(transparent,#131815 23%)}.save-row button{height:49px;border:0;border-radius:13px}.save-cancel{width:105px;background:#202823;color:#e8ede7}.save-main{flex:1;background:linear-gradient(180deg,#e1b56c,#ce9f5d);color:#17140f;font-weight:760}
+
+.dialog-backdrop{position:fixed;inset:0;background:rgba(2,5,4,.66);display:flex;align-items:flex-end;justify-content:center;z-index:100}.dialog{width:100%;max-width:430px;background:#151d19;border:1px solid #37423b;border-bottom:0;border-radius:22px 22px 0 0;padding:20px;box-shadow:0 -20px 70px rgba(0,0,0,.35)}.dialog h2{margin:0 0 6px;font-size:20px}.dialog p{margin:0 0 15px;color:var(--muted);font-size:12px;line-height:1.4}.dialog-fields{display:grid;gap:9px}.dialog-fields input{height:49px;border:1px solid #344038;background:#151d19;color:#eef2ec;border-radius:13px;padding:13px;outline:0}.dialog-actions{display:flex;gap:9px;margin-top:14px}.dialog-actions button{height:48px;border:0;border-radius:12px;flex:1}.dialog-cancel{background:#202823;color:#e8ede7}.dialog-save{background:linear-gradient(180deg,#acd796,#91bf80);color:#142015;font-weight:760}
+.reward{position:fixed;inset:0;display:grid;place-items:center;background:rgba(3,6,4,.34);z-index:120;pointer-events:none}
+.reward-card{min-width:220px;padding:20px 24px;border:1px solid #455148;border-radius:20px;background:rgba(22,29,25,.98);box-shadow:0 20px 70px rgba(0,0,0,.42);text-align:center;animation:rewardIn .22s ease both}
+.reward-check{width:48px;height:48px;margin:0 auto 10px;border-radius:50%;display:grid;place-items:center;background:var(--sage);color:#142016;font-size:22px;font-weight:800;box-shadow:none}
+.reward-card strong{display:block;font-size:18px}.reward-card span{display:block;color:var(--muted);font-size:11px;margin-top:4px}@keyframes rewardIn{from{opacity:0;transform:scale(.96) translateY(7px)}to{opacity:1;transform:none}}
+.toast{position:fixed;left:50%;bottom:82px;transform:translateX(-50%);z-index:130;background:#edf2eb;color:#172017;padding:10px 14px;border-radius:11px;font-size:11px;font-weight:700;box-shadow:0 12px 30px rgba(0,0,0,.3)}
+
+@media(min-width:700px){.phone{margin:24px 0;min-height:calc(100vh - 48px);border:1px solid #27312c;border-radius:34px;box-shadow:0 30px 90px rgba(0,0,0,.5)}.bottom,.wizard-actions{max-width:430px}.dialog{border-bottom:1px solid #37423b;margin-bottom:24px;border-radius:22px}}
+@media(max-width:370px){.tabs{width:100%}.tab{min-width:0;flex:1}.edit-grid{grid-template-columns:1fr}}
+.detail-panel{display:none}.detail-panel.active{display:block}
+/* v27 Edit Project skin */
+.editor-shell{
+  border:1px solid #303a34;
+  border-radius:22px;
+  background:#151b18;
+  overflow:hidden;
+  box-shadow:0 18px 45px rgba(0,0,0,.20);
+}
+.editor-top{
+  padding:20px 18px 18px;
+  background:linear-gradient(145deg,#1a211d,#151b18);
+  border-bottom:1px solid #2a342e;
+}
+.editor-top .kicker{margin-bottom:7px}
+.editor-top h1{margin:0;font-size:25px;line-height:1.08;letter-spacing:-.6px}
+.editor-top p{margin:7px 0 0;color:var(--muted);font-size:11px;line-height:1.45}
+.editor-section{padding:18px;border-top:1px solid #2a342e}
+.editor-section:first-of-type{border-top:0}
+.editor-title{font-size:10px;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);margin-bottom:11px}
+.editor-field{margin-bottom:14px}
+.editor-field:last-child{margin-bottom:0}
+.editor-label{display:block;color:#c9cec8;font-size:11px;margin-bottom:7px}
+.editor-field input,.editor-field textarea,.editor-field select{
+  width:100%;
+  border:1px solid #364139;
+  background:#111714;
+  color:#eef1eb;
+  border-radius:12px;
+  padding:12px 13px;
+  outline:0;
+  box-shadow:none;
+  -webkit-appearance:none;
+  appearance:none;
+}
+.editor-field input{height:47px}
+.editor-field textarea{min-height:95px;resize:vertical;line-height:1.45}
+.editor-field input:focus,.editor-field textarea:focus,.editor-field select:focus{
+  border-color:#5a665c;
+  background:#141b17;
+}
+.editor-select-wrap{position:relative}
+.editor-select-wrap:after{
+  content:"⌄";
+  position:absolute;
+  right:13px;
+  top:12px;
+  color:#8f9991;
+  pointer-events:none;
+}
+.editor-select-wrap select{padding-right:35px}
+.editor-photo{
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+.editor-photo-preview{
+  width:82px;height:82px;flex:none;
+  border-radius:15px;
+  border:1px solid #3a463e;
+  background:#1c241f;
+  display:grid;place-items:center;
+  overflow:hidden;
+  color:#7d8780;
+  font-size:10px;text-align:center;
+}
+.editor-photo-preview img{width:100%;height:100%;object-fit:cover}
+.editor-photo-copy{min-width:0;flex:1}
+.editor-photo-copy strong{display:block;font-size:12px;color:#dfe4de;margin-bottom:4px}
+.editor-photo-copy span{display:block;font-size:10px;color:var(--muted);line-height:1.4;margin-bottom:10px}
+.editor-photo-actions{display:flex;gap:7px;flex-wrap:wrap}
+.editor-mini{
+  height:37px;padding:0 11px;
+  border:1px solid #3b473f;border-radius:10px;
+  background:#202823;color:#d9ded8;font-size:10.5px;
+  display:inline-flex;align-items:center;justify-content:center;
+}
+.editor-mini.primary{background:#2a2920;border-color:#5d5439;color:#ead9b9}
+.editor-steps-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.editor-count{font-size:10px;color:#818c84}
+.editor-list{display:grid;gap:8px}
+.editor-row{
+  display:grid;
+  grid-template-columns:28px 1fr 31px;
+  gap:8px;align-items:center;
+  background:#19211c;
+  border:1px solid #2d3932;
+  border-radius:12px;
+  padding:7px;
+  transition:border-color .15s,background .15s;
+}
+.editor-row:focus-within{border-color:#536058;background:#1c241f}
+.editor-number{
+  width:27px;height:27px;border-radius:8px;
+  background:#2a332e;color:#cbd1cb;
+  display:grid;place-items:center;font-size:10px
+}
+.editor-row input{
+  width:100%;
+  height:40px;
+  border:0;
+  outline:0;
+  background:transparent;
+  color:#eef1eb;
+  padding:6px 4px;
+  box-shadow:none;
+  appearance:none;
+}
+.editor-row input::placeholder{color:#737e76}
+.editor-delete{
+  width:29px;height:29px;border:0;border-radius:8px;
+  background:transparent;color:#7e8981;font-size:17px
+}
+.editor-delete:hover{background:#26302a;color:#cdd3cd}
+.editor-add{
+  width:100%;height:44px;margin-top:9px;
+  border:1px dashed #465149;border-radius:12px;
+  background:#1a221d;color:#cbd3ca;font-size:11px
+}
+.editor-add:active{transform:scale(.99)}
+.editor-meta{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.editor-savebar{
+  position:sticky;bottom:0;
+  display:flex;gap:9px;
+  padding:14px 18px 17px;
+  background:linear-gradient(transparent,#131815 23%);
+  border-top:1px solid rgba(48,58,52,.6);
+}
+.editor-savebar button{height:49px;border-radius:13px;font-size:11px}
+.editor-cancel{
+  width:105px;
+  border:1px solid #313b35!important;
+  background:#202823;color:#e7ece6;
+}
+.editor-save{
+  flex:1;border:0;background:linear-gradient(180deg,#e3b76f,#cf9f5d);
+  color:#18150f;font-weight:760;
+  box-shadow:0 8px 22px rgba(0,0,0,.16);
+}
+.editor-save:active,.editor-cancel:active{transform:scale(.985)}
+
+.create-shell{border:1px solid #303a34;border-radius:22px;background:#151b18;overflow:hidden;box-shadow:0 18px 45px rgba(0,0,0,.2)}
+.create-head{padding:20px 18px 18px;background:linear-gradient(145deg,#1a211d,#151b18);border-bottom:1px solid #2a342e}
+.create-head-top{display:flex;justify-content:space-between;align-items:center}.create-step-label{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}.create-counter{font-size:11px;color:var(--soft)}
+.create-head h1{margin:8px 0 5px;font-size:25px;letter-spacing:-.6px}.create-head p{margin:0;color:var(--muted);font-size:11px;line-height:1.45}
+.create-dots{display:grid;grid-template-columns:repeat(6,1fr);gap:5px;margin-top:15px}.create-dots i{height:4px;border-radius:99px;background:#29322e}.create-dots i.on{background:var(--amber)}
+.create-body{padding:18px}.create-section-label{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:11px}
+.create-field{margin-bottom:15px}.create-field:last-child{margin-bottom:0}.create-label{display:block;font-size:11px;color:#c8cec8;margin-bottom:7px}
+.create-field input,.create-field textarea,.create-field select{width:100%;border:1px solid #354139;background:#111714;color:#eef1eb;border-radius:12px;padding:12px 13px;outline:0;appearance:none;box-shadow:none}
+.create-field input{height:48px}.create-field textarea{min-height:125px;resize:vertical;line-height:1.45}
+.create-field input:focus,.create-field textarea:focus,.create-field select:focus{border-color:#5a665c;background:#141b17}
+.create-photo{display:flex;align-items:center;gap:12px}.create-photo-preview{width:86px;height:86px;border-radius:15px;border:1px solid #3b4740;background:#1b231e;overflow:hidden;display:grid;place-items:center;color:#7d8780;font-size:10px;text-align:center}.create-photo-preview img{width:100%;height:100%;object-fit:cover}
+.create-photo-copy{flex:1;min-width:0}.create-photo-copy strong{display:block;font-size:12px;color:#e0e5df;margin-bottom:4px}.create-photo-copy span{display:block;color:var(--muted);font-size:10px;line-height:1.4;margin-bottom:9px}.create-photo-actions{display:flex;gap:7px;flex-wrap:wrap}
+.create-mini{height:38px;padding:0 11px;border:1px solid #3b473f;border-radius:10px;background:#202823;color:#d9ded8;font-size:10.5px;display:inline-flex;align-items:center;justify-content:center}.create-mini.primary{background:#292920;border-color:#5d5439;color:#ead9b8}
+.create-steps{display:grid;gap:8px}.create-step-row{display:grid;grid-template-columns:28px 1fr 31px;gap:8px;align-items:center;padding:7px;border:1px solid #2d3932;background:#19211c;border-radius:12px}.create-step-row:focus-within{border-color:#566158;background:#1c241f}
+.create-step-row input{height:40px;border:0;background:transparent;color:#eef1eb;padding:6px;outline:0;box-shadow:none}.create-step-row input::placeholder{color:#737e76}
+.create-num{width:27px;height:27px;border-radius:8px;background:#2a332e;display:grid;place-items:center;font-size:10px;color:#cbd1cb}.create-remove{border:0;background:transparent;color:#7f8a82;font-size:17px}
+.create-add{width:100%;height:44px;margin-top:9px;border:1px dashed #465149;border-radius:12px;background:#1a221d;color:#cbd3ca;font-size:11px}
+.create-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.create-hint{font-size:10px;color:#7f8982;line-height:1.4;margin-top:6px}
+.{padding:14px;border:1px solid #303a34;border-radius:15px;background:#171e1a}.-title{font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted)}.-name{font-size:18px;font-weight:740;margin-top:6px}.-meta{font-size:10.5px;color:var(--muted);margin-top:6px}
+.create-actions{display:flex;gap:8px;padding:13px 18px 17px;border-top:1px solid rgba(48,58,52,.6);background:linear-gradient(transparent,#131815 22%);position:sticky;bottom:0;z-index:5}.create-actions button{height:49px;border-radius:13px;font-size:11px}.create-back{width:105px;border:1px solid #313b35;background:#202823;color:#e7ece6}.create-next{flex:1;border:0;background:linear-gradient(180deg,#e5bc78,#d2a25d);color:#17140f;font-weight:760;box-shadow:0 8px 22px rgba(0,0,0,.16)}
+@media(max-width:370px){.create-grid{grid-template-columns:1fr}.create-photo{align-items:flex-start}}
+
+/* v33 visual direction only */
+.brand-mark,.plus{background:var(--amber)!important;color:var(--amber)!important}
+.brand-name,.route-name{color:#e9eee7}
+.summary{background:linear-gradient(145deg,#18221b,#121814);border-color:#2c3930}
+.summary-bar span{background:linear-gradient(90deg,#8fbd80,#a8d7ad)}
+.tab.active,.home-tab.active,.detail-tab.active{background:#27342b!important;color:#d9e9d7!important;box-shadow:inset 0 0 0 1px rgba(159,207,143,.14)}
+.primary,.create-next,.editor-save,.focus-btn{background:linear-gradient(180deg,#acd796,#91bf80)!important;color:#142015!important;box-shadow:0 9px 22px rgba(0,0,0,.16)!important}
+.card-progress span{background:linear-gradient(90deg,#8fbd80,#a8d7ad)}
+.complete-badge,.reward-check,.check.done,.shop-check.done{background:var(--sage)!important;border-color:var(--sage)!important;color:#132018!important}
+.focus{border-color:#3f5144;background:linear-gradient(145deg,#19231d,#121813)}
+.focus:before{background:linear-gradient(var(--amber),var(--sage))}
+.create-add,.editor-add,.shop-add{background:#19221c;border-color:#425047;color:#ccd7cb}
+.create-mini.primary,.editor-mini.primary{background:#263429;border-color:#4d624f;color:#d5e6d2}
+.create-head,.editor-top{background:linear-gradient(145deg,#18221c,#141a16)}
+.create-dots i.on{background:var(--amber)}
+.create-step-row:focus-within,.editor-row:focus-within{border-color:#536257;background:#1d2821}
+.route-home,.icon-btn{background:#141c17;color:#dce7dc;border-color:#303c35}
+.sort,.small-btn,.editor-delete,.create-remove,.mini-action{color:#89968d}
+.date-meta b,.detail-date b{color:#cfdacf}
+a{color:#afd0ac}
+
+/* v34 calm visual refinement, CSS only */
+:root{
+  --bg:#0d1210;
+  --surface:#141a16;
+  --surface2:#1a211c;
+  --surface3:#222a24;
+  --line:#2c3630;
+  --line2:#3c4840;
+  --text:#edf1eb;
+  --soft:#c5ccc6;
+  --muted:#89948c;
+  --amber:#9fbe99;
+  --amber2:#769a72;
+  --sage:#a9c9ae;
+  --sage2:#304435;
+  --danger:#d98582;
+  --cream:#e7ece5;
+  --shadow:0 14px 34px rgba(0,0,0,.18);
+}
+
+/* Less green surface area. Green stays an accent. */
+.summary{
+  background:#151c18;
+  box-shadow:none;
+}
+.summary-bar span{
+  background:var(--sage);
+}
+.tab.active,.home-tab.active,.detail-tab.active{
+  background:#202a23!important;
+  color:#d9e5da!important;
+  box-shadow:none;
+}
+.primary,.create-next,.editor-save,.focus-btn{
+  background:#a8c99f!important;
+  color:#152017!important;
+  box-shadow:none!important;
+}
+.card-progress span{
+  background:var(--sage);
+}
+.focus:before{
+  background:var(--sage);
+}
+.badge,.reward-check,.check.done,.shop-check.done{
+  background:var(--sage)!important;
+  border-color:var(--sage)!important;
+  color:#152017!important;
+  box-shadow:none;
+}
+
+/* Fix the awkward green block under Create new project. */
+.create .plus{
+  background:transparent!important;
+  color:var(--amber)!important;
+  width:auto!important;
+  height:auto!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+}
+
+/* Keep project covers neutral and subdued when no photo exists. */
+.cover{
+  background:linear-gradient(135deg,#28312b,#516052);
+}
+.cover.slate{background:linear-gradient(135deg,#2b343a,#53626b)}
+.cover.amber{background:linear-gradient(135deg,#35382f,#5d6857)}
+.cover.sage{background:linear-gradient(135deg,#303a32,#586756)}
+.cover.rose{background:linear-gradient(135deg,#383333,#66595a)}
+.cover.sky{background:linear-gradient(135deg,#30393e,#59666b)}
+.cover .no-photo{color:rgba(231,236,229,.48)}
+
+/* Softer project cards and less visual competition. */
+.card{
+  box-shadow:none;
+  border-color:#29332d;
+}
+.card:hover{
+  box-shadow:0 10px 24px rgba(0,0,0,.16);
+}
+
+/* Tone down the Home summary so the page breathes. */
+.summary-number{
+  font-size:31px;
+}
+.home-header h1{
+  font-size:29px;
+}
+.home-header p{
+  color:#858f88;
+}
+
+/* Make the Create card quiet rather than another colored object. */
+.create{
+  border-color:#3c4740;
+  background:transparent;
+}
+.create .label{
+  color:#c7cec8;
+}
+
+.settings-shell{border:1px solid #303a34;border-radius:22px;background:#151b18;overflow:hidden;box-shadow:0 18px 45px rgba(0,0,0,.18)}
+.settings-head{padding:20px 18px 17px;background:linear-gradient(145deg,#1a211d,#151b18);border-bottom:1px solid #2a342e}
+.settings-head h1{margin:6px 0 5px;font-size:25px;letter-spacing:-.6px}.settings-head p{margin:0;color:var(--muted);font-size:11px;line-height:1.4}
+.settings-section{padding:17px 18px;border-top:1px solid #2a342e}.settings-section:first-of-type{border-top:0}
+.settings-kicker{font-size:10px;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);margin-bottom:10px}
+.settings-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 0}
+.settings-row+.settings-row{border-top:1px solid #27312c}
+.settings-row-text{min-width:0}.settings-row-title{font-size:12px;font-weight:650}.settings-row-sub{font-size:10px;color:var(--muted);margin-top:3px;line-height:1.35}
+.settings-control{min-width:118px;height:40px;border:1px solid #3b463f;background:#111714;color:#eef1eb;border-radius:11px;padding:0 11px;font-size:11px;outline:0}
+.settings-control:focus{border-color:#5a665c}
+.settings-danger{width:100%;height:45px;border:1px solid #523936;border-radius:12px;background:#211918;color:#d98985;font-size:11px}
+.settings-reset-copy{font-size:10px;color:#7f8982;line-height:1.45;margin-top:8px}
+.settings-save-state{font-size:10px;color:var(--muted);margin-top:12px}
+
+.profile-shell{border:1px solid #303a34;border-radius:22px;background:#151b18;overflow:hidden;box-shadow:0 18px 45px rgba(0,0,0,.18)}
+.profile-hero{display:flex;align-items:center;gap:13px;padding:20px 18px;background:linear-gradient(145deg,#1a211d,#151b18);border-bottom:1px solid #2a342e}
+.profile-avatar{width:64px;height:64px;border-radius:18px;border:1px solid #3b473f;background:#202923;display:grid;place-items:center;overflow:hidden;flex:none;color:#b9cdb9;font-size:23px;font-weight:760}.profile-avatar img{width:100%;height:100%;object-fit:cover}
+.profile-copy{min-width:0;flex:1}.profile-kicker,.profile-title{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}.profile-copy h1{margin:5px 0 4px;font-size:20px;letter-spacing:-.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.profile-copy p{margin:0;font-size:10.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.profile-edit-btn{height:35px;padding:0 11px;border:1px solid #3b463f;border-radius:10px;background:#202823;color:#d9ded8;font-size:10.5px}
+.profile-section{padding:17px 18px;border-top:1px solid #2a342e}.profile-section:first-of-type{border-top:0}
+.profile-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:10px}.profile-stat{padding:11px 8px;border-radius:12px;background:#19211c;border:1px solid #29352e}.profile-stat strong{display:block;font-size:17px}.profile-stat span{display:block;color:var(--muted);font-size:9px;margin-top:3px}
+.profile-progress-card{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}.profile-progress-card>div{background:#1a221d;border:1px solid #2c3730;border-radius:13px;padding:13px}.profile-progress-card strong{display:block;font-size:20px}.profile-progress-card span{display:block;color:var(--muted);font-size:10px;margin-top:3px}
+.profile-finished-list{display:grid;gap:7px;margin-top:10px}.profile-finished{display:flex;align-items:center;gap:10px;width:100%;padding:8px;border:1px solid #2c3730;background:#19211c;border-radius:12px;color:#eef1eb;text-align:left}.profile-finished-cover{width:44px;height:44px;flex:none;border-radius:10px;background:#303a32;display:grid;place-items:center;overflow:hidden}.profile-finished-cover img{width:100%;height:100%;object-fit:cover}.profile-finished-main{min-width:0;flex:1}.profile-finished-main strong{display:block;font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.profile-finished-main small{display:block;font-size:9.5px;color:var(--muted);margin-top:3px}.profile-finished-arrow{font-size:20px;color:#7c887f}.profile-empty{padding:18px 14px;border:1px dashed #39443e;border-radius:12px;text-align:center}.profile-empty strong{display:block;font-size:11px}.profile-empty span{display:block;color:var(--muted);font-size:10px;margin-top:4px}
+
+.nav span{font-family:Arial,Helvetica,sans-serif;font-variant-emoji:text}
+
+/* Bottom navigation active-state refinement only */
+.bottom .nav.active{
+  outline:none;
+}
+.bottom .nav.active span{
+  width:34px;
+  height:34px;
+  display:grid;
+  place-items:center;
+  border:1px solid rgba(169,201,174,.42);
+  border-radius:10px;
+  font-size:22px;
+  transform:scale(1.03);
+  box-sizing:border-box;
+}
+
+/* Profile icon only */
+.nav .person-icon{
+  position:relative;
+  width:22px;
+  height:24px;
+  display:block;
+}
+.nav .person-icon i{
+  position:absolute;
+  width:7px;
+  height:7px;
+  border:1.6px solid currentColor;
+  border-radius:50%;
+  left:7.5px;
+  top:1px;
+  box-sizing:border-box;
+}
+.nav .person-icon b{
+  position:absolute;
+  width:15px;
+  height:9px;
+  border:1.6px solid currentColor;
+  border-bottom:0;
+  border-radius:9px 9px 0 0;
+  left:3.5px;
+  bottom:2px;
+  box-sizing:border-box;
+}
+.bottom .nav.active .person-icon{
+  transform:scale(1.03);
+}
+
+/* Bottom navigation icon alignment only */
+.bottom{
+  display:grid !important;
+  grid-template-columns:repeat(3,1fr) !important;
+  align-items:center !important;
+  justify-items:center !important;
+  column-gap:18px !important;
+}
+.bottom .nav{
+  width:100%;
+  max-width:94px;
+  height:100%;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:5px;
+  margin:0;
+  padding:0;
+  transform:translateY(-4px);
+}
+.bottom .nav>span{
+  width:20px;
+  height:20px;
+  display:grid;
+  place-items:center;
+  position:relative;
+  box-sizing:border-box;
+  font-size:17px;
+  line-height:1;
+  flex:none;
+}
+.bottom .nav.active>span{
+  width:32px;
+  height:32px;
+  border:1px solid rgba(169,201,174,.42);
+  border-radius:10px;
+  font-size:17px;
+  transform:none;
+}
+.bottom .nav .person-icon,
+.bottom .nav.active .person-icon{
+  width:20px;
+  height:20px;
+  border:0;
+  border-radius:0;
+  font-size:17px;
+  transform:none;
+}
+.bottom .nav .person-icon i{
+  width:6px;
+  height:6px;
+  left:7px;
+  top:0;
+}
+.bottom .nav .person-icon b{
+  width:13px;
+  height:8px;
+  left:3.5px;
+  bottom:0;
+}
+
+.bottom .nav.active .person-icon:after{
+  content:"";
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:32px;
+  height:32px;
+  transform:translate(-50%,-50%);
+  border:1px solid rgba(169,201,174,.42);
+  border-radius:10px;
+  box-sizing:border-box;
+}
+
+/* Profile active-state alignment only */
+.bottom .nav.active .person-icon{
+  width:32px;
+  height:32px;
+  border:0;
+  border-radius:10px;
+  box-sizing:border-box;
+}
+.bottom .nav.active .person-icon i{
+  left:13px;
+  top:6px;
+}
+.bottom .nav.active .person-icon b{
+  left:9.5px;
+  bottom:6px;
+}
+
+.priority-card{position:relative;border-color:#4a3d3d}
+.priority-line{position:absolute;left:-1px;right:-1px;top:-1px;height:3px;background:#c76060;border-radius:12px 12px 0 0;z-index:3}
+.priority-label{position:absolute;left:11px;top:10px;z-index:4;padding:3px 6px;border-radius:4px;background:rgba(15,18,16,.88);color:#d76b6b;font-family:"Arial Narrow",Arial,sans-serif;font-size:8px;font-weight:800;letter-spacing:.12em;line-height:1;text-transform:uppercase}
+.priority-toggle{display:flex;align-items:center;gap:10px;margin-top:15px;padding:12px 13px;border:1px solid #423d3c;border-radius:12px;background:#19211c;cursor:pointer}
+.priority-toggle input{position:absolute;opacity:0;pointer-events:none}
+.priority-box{width:20px;height:20px;flex:none;border:1px solid #594747;border-radius:6px;background:#151b18;display:grid;place-items:center;box-sizing:border-box}
+.priority-toggle input:checked + .priority-box{background:#b85d5d;border-color:#c96a6a}
+.priority-toggle input:checked + .priority-box:after{content:"";width:8px;height:4px;border-left:2px solid #191311;border-bottom:2px solid #191311;transform:rotate(-45deg) translateY(-1px)}
+.priority-toggle strong{display:block;color:#e5dedd;font-size:11px}
+.priority-toggle small{display:block;color:#8f9791;font-size:9px;margin-top:3px}
+
+.step-reorderable{cursor:grab;
+  transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease,background .18s ease;
+  user-select:none;
+  -webkit-user-select:none;
+}
+.step-reorderable.step-moving{cursor:grabbing;
+  position:relative;
+  z-index:20;
+  transform:translateY(-3px) scale(1.025);
+  box-shadow:0 12px 24px rgba(0,0,0,.24);
+  border-color:#56645b!important;
+  background:#202a24!important;
+}
+.step-reorderable.step-drop-target{
+  border-color:#8da48d!important;
+  box-shadow:inset 0 2px 0 rgba(169,201,174,.24);
+}
+
+/* Settings header cleanup only */
+.settings-head{padding-top:18px;padding-bottom:15px}
+.settings-head h1{margin-top:0}
+
+.reset-confirm-copy{margin:2px 0 8px;color:var(--muted);font-size:10px;line-height:1.4}
+.reset-confirm-copy strong{color:#e2e7e1;letter-spacing:.04em}
+.reset-confirm-input{
+  width:100%;
+  min-height:44px;
+  padding:0 12px;
+  border:1px solid #3a453e;
+  border-radius:11px;
+  background:#111814;
+  color:var(--text);
+  outline:none;
+  text-transform:uppercase;
+  letter-spacing:.06em;
+}
+.reset-confirm-input:focus{border-color:#617365;box-shadow:0 0 0 2px rgba(159,207,143,.08)}
+.reset-confirm-input::placeholder{color:#667168}
+</style>
+
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0d1210">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Buildflow">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+</head>
+<body>
+<div class="app"><main class="phone">
+<section class="screen" id="home"></section>
+<section class="screen hidden" id="project"></section>
+<section class="screen hidden" id="wizard"></section>
+<section class="screen hidden" id="editor"></section>
+<section class="screen hidden" id="settings"></section>
+<section class="screen hidden" id="profile"></section>
+<section class="screen hidden" id="success"></section>
+<nav class="bottom" id="bottom"><button class="nav active" id="homeNav"><span>⌂</span>Home</button><button class="nav" id="profileNav"><span class="person-icon" aria-hidden="true"><i></i><b></b></span>Profile</button><button class="nav" id="settingsNav"><span>⚙︎</span>Settings</button></nav>
+<div class="dialog-backdrop hidden" id="dialog"></div>
+<div class="reward hidden" id="reward"></div>
+<div class="toast hidden" id="toast"></div>
+<script>
+"use strict";
+
+const STORAGE_KEY="buildflow.scratch.v4";
+const SETTINGS_KEY="buildflow.settings.v1";
+const PROFILE_KEY="buildflow.profile.v1";
+let state=load();
+let settings=loadSettings();
+let view={screen:"home",homeTab:"active",projectTab:"overview",projectId:null,sort:"recent"};
+let wizard=null,editor=null,dialogAction=null,rewardTimer=null,toastTimer=null;
+
+
+const LANGUAGES={
+  en:{name:"English",code:"en",labels:{home:"Home",profile:"Profile",projects:"Your projects",inProgress:"In progress",finished:"Finished",create:"Create new project",overall:"Overall progress",target:"Target date",steps:"Steps",shopping:"Shopping list",edit:"Edit project",delete:"Delete project",settings:"Settings",language:"Language",currency:"Currency",reset:"Reset app",back:"Back",save:"Save changes",cancel:"Cancel",name:"Project name",description:"Description",details:"Details",budget:"Budget",category:"Project type",photo:"Project photo",upNext:"Up next",markComplete:"Mark step complete"}},
+  no:{name:"Norsk",code:"no",labels:{home:"Hjem",profile:"Profil",projects:"Prosjekter",inProgress:"Pågår",finished:"Ferdige",create:"Nytt prosjekt",overall:"Samlet fremdrift",target:"Måldato",steps:"Steg",shopping:"Handleliste",edit:"Rediger prosjekt",delete:"Slett prosjekt",settings:"Innstillinger",language:"Språk",currency:"Valuta",reset:"Tilbakestill appen",back:"Tilbake",save:"Lagre endringer",cancel:"Avbryt",name:"Prosjektnavn",description:"Beskrivelse",details:"Detaljer",budget:"Budsjett",category:"Prosjekttype",photo:"Prosjektbilde",upNext:"Neste",markComplete:"Marker steg som fullført"}},
+  sv:{name:"Svenska",code:"sv",labels:{home:"Hem",profile:"Profil",projects:"Projekt",inProgress:"Pågående",finished:"Klart",create:"Nytt projekt",overall:"Samlad framdrift",target:"Måldatum",steps:"Steg",shopping:"Inköpslista",edit:"Redigera projekt",delete:"Ta bort projekt",settings:"Inställningar",language:"Språk",currency:"Valuta",reset:"Återställ appen",back:"Tillbaka",save:"Spara ändringar",cancel:"Avbryt",name:"Projektnamn",description:"Beskrivning",details:"Detaljer",budget:"Budget",category:"Projekttyp",photo:"Projektbild",upNext:"Nästa",markComplete:"Markera steget klart"}},
+  da:{name:"Dansk",code:"da",labels:{home:"Hjem",profile:"Profil",projects:"Projekter",inProgress:"I gang",finished:"Færdige",create:"Nyt projekt",overall:"Samlet fremdrift",target:"Måldato",steps:"Trin",shopping:"Indkøbsliste",edit:"Rediger projekt",delete:"Slet projekt",settings:"Indstillinger",language:"Sprog",currency:"Valuta",reset:"Nulstil appen",back:"Tilbage",save:"Gem ændringer",cancel:"Annuller",name:"Projektnavn",description:"Beskrivelse",details:"Detaljer",budget:"Budget",category:"Projekttype",photo:"Projektfoto",upNext:"Næste",markComplete:"Markér trin som færdigt"}},
+  fi:{name:"Suomi",code:"fi",labels:{home:"Koti",profile:"Profiili",projects:"Projektit",inProgress:"Kesken",finished:"Valmiit",create:"Uusi projekti",overall:"Kokonaisedistyminen",target:"Tavoitepäivä",steps:"Vaiheet",shopping:"Ostoslista",edit:"Muokkaa projektia",delete:"Poista projekti",settings:"Asetukset",language:"Kieli",currency:"Valuutta",reset:"Nollaa sovellus",back:"Takaisin",save:"Tallenna muutokset",cancel:"Peruuta",name:"Projektin nimi",description:"Kuvaus",details:"Tiedot",budget:"Budjetti",category:"Projektin tyyppi",photo:"Projektikuva",upNext:"Seuraavaksi",markComplete:"Merkitse vaihe valmiiksi"}},
+  de:{name:"Deutsch",code:"de",labels:{home:"Start",profile:"Profil",projects:"Projekte",inProgress:"In Arbeit",finished:"Fertig",create:"Neues Projekt",overall:"Gesamtfortschritt",target:"Zieldatum",steps:"Schritte",shopping:"Einkaufsliste",edit:"Projekt bearbeiten",delete:"Projekt löschen",settings:"Einstellungen",language:"Sprache",currency:"Währung",reset:"App zurücksetzen",back:"Zurück",save:"Änderungen speichern",cancel:"Abbrechen",name:"Projektname",description:"Beschreibung",details:"Details",budget:"Budget",category:"Projekttyp",photo:"Projektfoto",upNext:"Als Nächstes",markComplete:"Schritt abschließen"}},
+  fr:{name:"Français",code:"fr",labels:{home:"Accueil",profile:"Profil",projects:"Projets",inProgress:"En cours",finished:"Terminés",create:"Nouveau projet",overall:"Avancement global",target:"Date cible",steps:"Étapes",shopping:"Liste d’achats",edit:"Modifier le projet",delete:"Supprimer le projet",settings:"Réglages",language:"Langue",currency:"Devise",reset:"Réinitialiser l’app",back:"Retour",save:"Enregistrer",cancel:"Annuler",name:"Nom du projet",description:"Description",details:"Détails",budget:"Budget",category:"Type de projet",photo:"Photo du projet",upNext:"À suivre",markComplete:"Terminer l’étape"}},
+  es:{name:"Español",code:"es",labels:{home:"Inicio",profile:"Perfil",projects:"Proyectos",inProgress:"En curso",finished:"Terminados",create:"Nuevo proyecto",overall:"Progreso general",target:"Fecha objetivo",steps:"Pasos",shopping:"Lista de compras",edit:"Editar proyecto",delete:"Eliminar proyecto",settings:"Ajustes",language:"Idioma",currency:"Moneda",reset:"Restablecer app",back:"Volver",save:"Guardar cambios",cancel:"Cancelar",name:"Nombre del proyecto",description:"Descripción",details:"Detalles",budget:"Presupuesto",category:"Tipo de proyecto",photo:"Foto del proyecto",upNext:"Siguiente",markComplete:"Marcar paso como completado"}},
+  pt:{name:"Português",code:"pt",labels:{home:"Início",profile:"Perfil",projects:"Projetos",inProgress:"Em andamento",finished:"Concluídos",create:"Novo projeto",overall:"Progresso geral",target:"Data alvo",steps:"Etapas",shopping:"Lista de compras",edit:"Editar projeto",delete:"Excluir projeto",settings:"Idioma e definições",language:"Idioma",currency:"Moeda",reset:"Repor aplicação",back:"Voltar",save:"Guardar alterações",cancel:"Cancelar",name:"Nome do projeto",description:"Descrição",details:"Detalhes",budget:"Orçamento",category:"Tipo de projeto",photo:"Foto do projeto",upNext:"A seguir",markComplete:"Marcar etapa como concluída"}},
+  it:{name:"Italiano",code:"it",labels:{home:"Home",profile:"Profilo",projects:"Progetti",inProgress:"In corso",finished:"Finiti",create:"Nuovo progetto",overall:"Avanzamento totale",target:"Data obiettivo",steps:"Passaggi",shopping:"Lista acquisti",edit:"Modifica progetto",delete:"Elimina progetto",settings:"Impostazioni",language:"Lingua",currency:"Valuta",reset:"Reimposta app",back:"Indietro",save:"Salva modifiche",cancel:"Annulla",name:"Nome progetto",description:"Descrizione",details:"Dettagli",budget:"Budget",category:"Tipo di progetto",photo:"Foto del progetto",upNext:"Prossimo",markComplete:"Segna passaggio come completato"}},
+  nl:{name:"Nederlands",code:"nl",labels:{home:"Home",profile:"Profiel",projects:"Projecten",inProgress:"Bezig",finished:"Afgerond",create:"Nieuw project",overall:"Totale voortgang",target:"Doeldatum",steps:"Stappen",shopping:"Boodschappenlijst",edit:"Project bewerken",delete:"Project verwijderen",settings:"Instellingen",language:"Taal",currency:"Valuta",reset:"App resetten",back:"Terug",save:"Wijzigingen opslaan",cancel:"Annuleren",name:"Projectnaam",description:"Beschrijving",details:"Details",budget:"Budget",category:"Projecttype",photo:"Projectfoto",upNext:"Volgende",markComplete:"Stap voltooien"}},
+  pl:{name:"Polski",code:"pl",labels:{home:"Start",profile:"Profil",projects:"Projekty",inProgress:"W toku",finished:"Ukończone",create:"Nowy projekt",overall:"Postęp ogólny",target:"Termin",steps:"Kroki",shopping:"Lista zakupów",edit:"Edytuj projekt",delete:"Usuń projekt",settings:"Ustawienia",language:"Język",currency:"Waluta",reset:"Zresetuj aplikację",back:"Wstecz",save:"Zapisz zmiany",cancel:"Anuluj",name:"Nazwa projektu",description:"Opis",details:"Szczegóły",budget:"Budżet",category:"Typ projektu",photo:"Zdjęcie projektu",upNext:"Następny",markComplete:"Oznacz krok jako wykonany"}}
+};
+const CURRENCIES=[
+  ["NOK","Norwegian krone"],["EUR","Euro"],["USD","US dollar"],["GBP","British pound"],
+  ["SEK","Swedish krona"],["DKK","Danish krone"],["CHF","Swiss franc"],["PLN","Polish złoty"],
+  ["CAD","Canadian dollar"],["AUD","Australian dollar"],["JPY","Japanese yen"],["CNY","Chinese yuan"],
+  ["INR","Indian rupee"],["NZD","New Zealand dollar"]
+];
+function loadSettings(){
+  try{
+    const raw=localStorage.getItem(SETTINGS_KEY);
+    const v=raw?JSON.parse(raw):{};
+    return {language:LANGUAGES[v?.language]?v.language:"en",currency:CURRENCIES.some(c=>c[0]===v?.currency)?v.currency:"NOK"};
+  }catch{return {language:"en",currency:"NOK"}}
+}
+function saveSettings(){try{localStorage.setItem(SETTINGS_KEY,JSON.stringify(settings))}catch{}}
+function loadProfile(){
+  try{
+    const raw=localStorage.getItem(PROFILE_KEY);
+    const v=raw?JSON.parse(raw):{};
+    return {name:String(v?.name||""),about:String(v?.about||""),photo:String(v?.photo||"")};
+  }catch{return {name:"",about:"",photo:""}}
+}
+function saveProfile(){try{localStorage.setItem(PROFILE_KEY,JSON.stringify(profile))}catch{}}
+let profile=loadProfile();
+
+function openProfile(){
+  showScreen("profile");
+  renderProfile();
+  window.scrollTo(0,0);
+}
+function renderProfile(){
+  const ps=state.projects;
+  const active=ps.filter(p=>!p.completed);
+  const finished=ps.filter(p=>p.completed);
+  const totalSteps=ps.reduce((sum,p)=>sum+p.steps.length,0);
+  const doneSteps=ps.reduce((sum,p)=>sum+p.steps.filter(s=>s.done).length,0);
+  const recentFinished=[...finished].sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)).slice(0,3);
+
+  $("profile").innerHTML=`<div class="route">
+    <div class="route-wrap"><div class="route-kicker">Profile</div><div class="route-name">${esc(profile.name||"Your profile")}</div></div>
+  </div>
+  <div class="profile-shell">
+    <section class="profile-hero">
+      <div class="profile-avatar">${profile.photo?`<img src="${esc(profile.photo)}" alt="">`:`<span>${esc((profile.name||"Y").slice(0,1).toUpperCase())}</span>`}</div>
+      <div class="profile-copy"><div class="profile-kicker">Your Buildflow</div><h1>${esc(profile.name||"Your profile")}</h1><p>${esc(profile.about||"Add a little about yourself.")}</p></div>
+      <button class="profile-edit-btn" id="profileEditBtn" type="button">Edit</button>
+    </section>
+    <section class="profile-section"><div class="profile-title">Your project history</div>
+      <div class="profile-stats">
+        <div class="profile-stat"><strong>${ps.length}</strong><span>Projects</span></div>
+        <div class="profile-stat"><strong>${active.length}</strong><span>In progress</span></div>
+        <div class="profile-stat"><strong>${finished.length}</strong><span>Finished</span></div>
+        <div class="profile-stat"><strong>${doneSteps}</strong><span>Steps done</span></div>
+      </div>
+    </section>
+    <section class="profile-section"><div class="profile-title">Your progress</div>
+      <div class="profile-progress-card"><div><strong>${finished.length}</strong><span>projects finished</span></div><div><strong>${doneSteps}/${totalSteps||0}</strong><span>steps completed</span></div></div>
+    </section>
+    <section class="profile-section"><div class="profile-title">Recently finished</div><div class="profile-finished-list" id="profileFinishedList"></div></section>
+  </div>`;
+    $("profileEditBtn").onclick=profileDialog;
+
+  const list=$("profileFinishedList");
+  if(!recentFinished.length){
+    list.innerHTML='<div class="profile-empty"><strong>No finished projects yet</strong><span>Finished projects will appear here.</span></div>';
+  }else{
+    recentFinished.forEach(project=>{
+      const row=document.createElement("button");
+      row.type="button";row.className="profile-finished";
+      row.innerHTML=`<span class="profile-finished-cover ${esc(project.cover)}">${project.photo?`<img src="${esc(project.photo)}" alt="">`:""}</span>
+      <span class="profile-finished-main"><strong>${esc(project.name)}</strong><small>${project.steps.length} steps · ${dateText(project.date)}</small></span>
+      <span class="profile-finished-arrow">›</span>`;
+      row.onclick=()=>openProject(project.id);
+      list.appendChild(row);
+    });
+  }
+}
+function profileDialog(){
+  $("dialog").innerHTML=`<div class="dialog"><h2>Edit profile</h2><p>Keep this simple. This is your own Buildflow space.</p>
+    <div class="dialog-fields">
+      <input id="pName" maxlength="40" placeholder="Your name" value="${esc(profile.name)}">
+      <input id="pAbout" maxlength="80" placeholder="A little about you" value="${esc(profile.about)}">
+      <div class="editor-photo" style="margin-top:2px">
+        <div class="editor-photo-preview">${profile.photo?`<img src="${esc(profile.photo)}" alt="">`:'<span>No photo</span>'}</div>
+        <div class="editor-photo-copy"><strong>Profile photo</strong><span>Take a photo or upload one from your device.</span>
+          <div class="editor-photo-actions">
+            <label class="editor-mini primary" for="pPhoto">${profile.photo?"Change photo":"Add photo"}</label>
+            <button class="editor-mini" id="pRemovePhoto" type="button" ${profile.photo?"":"disabled"}>Remove</button>
+            <input id="pPhoto" type="file" accept="image/*" hidden>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="dialog-actions"><button class="dialog-cancel" id="dialogCancel">Cancel</button><button class="dialog-save" id="profileSave">Save</button></div></div>`;
+  $("dialog").classList.remove("hidden");
+  $("dialogCancel").onclick=closeDialog;
+  $("pPhoto").onchange=async ev=>{
+    const f=ev.target.files?.[0];if(!f)return;
+    try{profile.photo=await resizeImage(f,700,.82);profileDialog()}catch{toast("Couldn't use that photo.");profileDialog()}
+  };
+  $("pRemovePhoto").onclick=()=>{profile.photo="";profileDialog()};
+  $("profileSave").onclick=()=>{
+    profile.name=$("pName").value.trim();profile.about=$("pAbout").value.trim();saveProfile();closeDialog();renderProfile();toast("Profile saved.");
+  };
+  requestAnimationFrame(()=>$("pName").focus());
+}
+
+function lang(){return LANGUAGES[settings.language]||LANGUAGES.en}
+function t(key){return lang().labels[key]||LANGUAGES.en.labels[key]||key}
+function currencySymbol(code){
+  return ({NOK:"kr",EUR:"€",USD:"$",GBP:"£",SEK:"kr",DKK:"kr",CHF:"CHF",PLN:"zł",CAD:"CA$",AUD:"A$",JPY:"¥",CNY:"¥",INR:"₹",NZD:"NZ$"})[code]||code
+}
+
+
+const GLOBAL_UI={
+  en:{
+    "Your projects":"Your projects","Everything you're working toward, in one place.":"Everything you're working toward, in one place.",
+    "Overall progress":"Overall progress","In progress":"In progress","Finished":"Finished","Planned":"Planned",
+    "Recent":"Recent","Name":"Name","No finished projects":"No finished projects","Completed projects collect here.":"Completed projects collect here.",
+    "Nothing in progress":"Nothing in progress","Start something with a clear finish line.":"Start something with a clear finish line.",
+    "No photo":"No photo","Target":"Target","Steps":"Steps","Shopping list":"Shopping list","Budget":"Budget",
+    "Project complete.":"Project complete.","All steps are complete.":"All steps are complete.","Up next":"Up next",
+    "Add your first step":"Add your first step","Your project needs a step.":"Your project needs a step.",
+    "Mark step complete":"Mark step complete","Edit project":"Edit project","Delete project":"Delete project",
+    "Shopping list is empty":"Shopping list is empty","Add the things you need for the project.":"Add the things you need for the project.",
+    "Remaining":"Remaining","Over budget":"Over budget","Add to shopping list":"Add to shopping list",
+    "Project details":"Project details","Basics":"Basics","Project photo":"Project photo","Use your own project photo":"Use your own project photo",
+    "A real photo makes the project easier to recognize in your project list.":"A real photo makes the project easier to recognize in your project list.",
+    "Change photo":"Change photo","Remove":"Remove","Planning":"Planning","Add step":"Add step",
+    "Save changes":"Save changes","Cancel":"Cancel","Project name":"Project name","Description":"Description","Details":"Details","Project type":"Project type",
+    "New project":"New project","Start with the idea":"Start with the idea","Add the context":"Add the context","Plan the steps":"Plan the steps","Set the basics":"Set the basics","Make the project yours":"Make the project yours",
+    "Give your project a clear name.":"Give your project a clear name.","Add the details that will help later.":"Add the details that will help later.",
+    "Turn the project into a simple sequence.":"Turn the project into a simple sequence.","Budget and target date are optional.":"Budget and target date are optional.",
+    "Choose a photo and a category before you start.":"Choose a photo and a category before you start.",
+    "What are you making or doing?":"What are you making or doing?","You can edit this later.":"You can edit this later.",
+    "Both are optional. You can change them later.":"Both are optional. You can change them later.",
+    "Choose what fits this project best.":"Choose what fits this project best.",
+    "No project description yet.":"No project description yet.","No target date":"No target date","No photo added":"No photo added",
+    "Project created":"Project created","Ready to get started.":"Ready to get started.","Create project":"Create project","Create another":"Create another",
+    "Preferences":"Preferences","Data":"Data","Language":"Language","Currency":"Currency","Reset app":"Reset app",
+    "Keep the app in the format that works for you.":"Keep the app in the format that works for you.",
+    "Changes save automatically on this device.":"Changes save automatically on this device.",
+    "Changes save automatically.":"Changes save automatically.",
+    "Used for budgets and shopping lists.":"Used for budgets and shopping lists.",
+    "Change the language used throughout the app.":"Change the language used throughout the app.",
+    "Deletes all Buildflow projects and local settings from this browser, returning the app to a clean-install state.":"Deletes all Buildflow projects and local settings from this browser, returning the app to a clean-install state.",
+    "Scratch account · saved in this browser.":"Scratch account · saved in this browser.",
+    "What do you need?":"What do you need?","Quantity":"Quantity","Price per item":"Price per item","Add item":"Add item","Edit item":"Edit item",
+    "Update the item details.":"Update the item details.","Keep the list simple. Add the item, quantity and price.":"Keep the list simple. Add the item, quantity and price.",
+    "Keep the step short and concrete.":"Keep the step short and concrete.","Remove item?":"Remove item?","Delete project?":"Delete project?",
+    "This removes it from the shopping list.":"This removes it from the shopping list.","This removes the project and its shopping list from this browser.":"This removes the project and its shopping list from this browser."
+  },
+  no:{
+    "Your projects":"Prosjekter","Everything you're working toward, in one place.":"Alt du jobber mot, samlet på ett sted.",
+    "Overall progress":"Samlet fremdrift","In progress":"Pågår","Finished":"Ferdige","Planned":"Planlagt",
+    "Recent":"Sist brukt","Name":"Navn","No finished projects":"Ingen ferdige prosjekter","Completed projects collect here.":"Ferdige prosjekter samles her.",
+    "Nothing in progress":"Ingenting pågår","Start something with a clear finish line.":"Start noe med en tydelig slutt.",
+    "No photo":"Ingen bilde","Target":"Mål","Steps":"Steg","Shopping list":"Handleliste","Budget":"Budsjett",
+    "Project complete.":"Prosjekt ferdig.","All steps are complete.":"Alle steg er fullført.","Up next":"Neste",
+    "Add your first step":"Legg til første steg","Your project needs a step.":"Prosjektet trenger et steg.",
+    "Mark step complete":"Marker steg som fullført","Edit project":"Rediger prosjekt","Delete project":"Slett prosjekt",
+    "Shopping list is empty":"Handlelisten er tom","Add the things you need for the project.":"Legg til det du trenger for prosjektet.",
+    "Remaining":"Igjen","Over budget":"Over budsjett","Add to shopping list":"Legg til i handlelisten",
+    "Project details":"Prosjektdetaljer","Basics":"Grunnleggende","Project photo":"Prosjektbilde","Use your own project photo":"Bruk ditt eget prosjektbilde",
+    "A real photo makes the project easier to recognize in your project list.":"Et ekte bilde gjør prosjektet lettere å kjenne igjen.",
+    "Change photo":"Bytt bilde","Remove":"Fjern","Planning":"Planlegging","Add step":"Legg til steg",
+    "Save changes":"Lagre endringer","Cancel":"Avbryt","Project name":"Prosjektnavn","Description":"Beskrivelse","Details":"Detaljer","Project type":"Prosjekttype",
+    "New project":"Nytt prosjekt","Start with the idea":"Start med ideen","Add the context":"Legg til kontekst","Plan the steps":"Planlegg stegene","Set the basics":"Sett grunnlaget","Make the project yours":"Gjør prosjektet til ditt",
+    "Give your project a clear name.":"Gi prosjektet et tydelig navn.","Add the details that will help later.":"Legg til detaljene som hjelper senere.",
+    "Turn the project into a simple sequence.":"Gjør prosjektet om til en enkel rekkefølge.","Budget and target date are optional.":"Budsjett og måldato er valgfritt.",
+    "Choose a photo and a category before you start.":"Velg bilde og kategori før du starter.",
+    "What are you making or doing?":"Hva lager eller gjør du?","You can edit this later.":"Du kan endre dette senere.",
+    "Both are optional. You can change them later.":"Begge er valgfritt. Du kan endre dem senere.",
+    "Choose what fits this project best.":"Velg det som passer best.",
+    "No project description yet.":"Ingen prosjektbeskrivelse ennå.","No target date":"Ingen måldato","No photo added":"Ingen bilde lagt til",
+    "Project created":"Prosjekt opprettet","Ready to get started.":"Klar til å begynne.","Create project":"Opprett prosjekt","Create another":"Lag et nytt",
+    "Preferences":"Preferanser","Data":"Data","Language":"Språk","Currency":"Valuta","Reset app":"Tilbakestill appen",
+    "Keep the app in the format that works for you.":"Tilpass appen slik den passer deg.","Changes save automatically on this device.":"Endringer lagres automatisk på denne enheten.",
+    "Changes save automatically.":"Endringer lagres automatisk.","Used for budgets and shopping lists.":"Brukes for budsjetter og handlelister.",
+    "Change the language used throughout the app.":"Endre språket i hele appen.",
+    "Deletes all Buildflow projects and local settings from this browser, returning the app to a clean-install state.":"Sletter alle Buildflow-prosjekter og innstillinger i nettleseren og tilbakestiller appen.",
+    "Scratch account · saved in this browser.":"Demo-konto · lagret i denne nettleseren.",
+    "What do you need?":"Hva trenger du?","Quantity":"Antall","Price per item":"Pris per stk.","Add item":"Legg til vare","Edit item":"Rediger vare",
+    "Update the item details.":"Oppdater vareinformasjonen.","Keep the list simple. Add the item, quantity and price.":"Hold listen enkel. Legg til vare, antall og pris.",
+    "Keep the step short and concrete.":"Hold steget kort og konkret.","Remove item?":"Fjerne vare?","Delete project?":"Slette prosjekt?",
+    "This removes it from the shopping list.":"Dette fjerner varen fra handlelisten.","This removes the project and its shopping list from this browser.":"Dette sletter prosjektet og handlelisten fra denne nettleseren."
+  }
+};
+function u(key){const map=GLOBAL_UI[settings.language]||GLOBAL_UI.en;return map[key]||GLOBAL_UI.en[key]||key}
+function localizeRendered(root=document){
+  const map=GLOBAL_UI[settings.language]||GLOBAL_UI.en;
+  const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);
+  const nodes=[];let n;
+  while(n=walker.nextNode())nodes.push(n);
+  nodes.forEach(node=>{
+    const text=node.nodeValue.trim();
+    if(map[text])node.nodeValue=node.nodeValue.replace(text,map[text]);
+  });
+  root.querySelectorAll?.("[placeholder],[aria-label]").forEach(el=>{
+    ["placeholder","aria-label"].forEach(attr=>{
+      const v=el.getAttribute(attr);
+      if(v&&map[v])el.setAttribute(attr,map[v]);
+    });
+  });
+}
+function applyLanguage(){
+  document.documentElement.lang=lang().code;
+}
+function load(){
+  try{
+    const raw=localStorage.getItem(STORAGE_KEY);
+    if(!raw)return {projects:[]};
+    return normalize(JSON.parse(raw));
+  }catch{return {projects:[]}}
+}
+function save(){
+  try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state));}
+  catch{toast("Could not save changes in this browser.")}
+}
+function normalize(raw){
+  const projects=Array.isArray(raw?.projects)?raw.projects:[];
+  return {projects:projects.map((p,i)=>({
+    id:String(p?.id??`${Date.now()}-${i}`),
+    name:String(p?.name||"Untitled project"),
+    description:String(p?.description||""),
+    details:String(p?.details||""),
+    category:String(p?.category||"Personal"),
+    date:String(p?.date||""),
+    budget:Number(p?.budget)||0,
+    priority:!!p?.priority,
+    photo:String(p?.photo||""),
+    cover:["sage","slate","amber","rose","sky"].includes(p?.cover)?p.cover:"sage",
+    createdAt:Number(p?.createdAt)||Date.now(),
+    completed:!!p?.completed,
+    steps:Array.isArray(p?.steps)?p.steps.map((s,j)=>({id:String(s?.id??j+1),text:String(s?.text||"").trim(),done:!!s?.done})).filter(s=>s.text):[],
+    materials:Array.isArray(p?.materials)?p.materials.map((m,j)=>({id:String(m?.id??j+1),name:String(m?.name||"").trim(),qty:Number(m?.qty)||1,price:Number(m?.price)||0,bought:!!m?.bought})).filter(m=>m.name):[]
+  }))};
+}
+function $(id){return document.getElementById(id)}
+function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]))}
+function money(v){
+  const n=Number(v)||0;
+  const code=settings.currency;
+  const symbol=currencySymbol(code);
+  const value=n.toLocaleString("en-US",{minimumFractionDigits:Number.isInteger(n)?0:2,maximumFractionDigits:2}).replace(/,/g," ");
+  const suffix=["NOK","SEK","DKK"].includes(code);
+  return suffix?`${value} ${symbol}`:`${symbol}${value}`;
+}
+function dateText(v){if(!v)return"No target date";const d=new Date(v+"T12:00:00");return Number.isNaN(d.getTime())?"No target date":d.toLocaleDateString(undefined,{day:"numeric",month:"short",year:"numeric"})}
+function pget(id){return state.projects.find(p=>p.id===id)||null}
+function pct(p){return p.steps.length?Math.round(p.steps.filter(s=>s.done).length/p.steps.length*100):0}
+function syncBottomNav(name){
+  $("homeNav")?.classList.toggle("active",name==="home");
+  $("profileNav")?.classList.toggle("active",name==="profile");
+  $("settingsNav")?.classList.toggle("active",name==="settings");
+}
+function showScreen(name){
+  ["home","project","wizard","editor","settings","profile","success"].forEach(x=>$(x).classList.toggle("hidden",x!==name));
+  $("bottom").classList.toggle("hidden",false);
+syncBottomNav(name);
+  view.screen=name;
+}
+function goHome(){
+  view.projectId=null;view.projectTab="overview";view.homeTab="active";
+  $("activeProjectsTab")?.classList.add("active");$("finishedProjectsTab")?.classList.remove("active");
+  showScreen("home");applyLanguage();renderHome();window.scrollTo(0,0);
+}
+function toast(msg){
+  const t=$("toast");t.textContent=msg;t.classList.remove("hidden");clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.add("hidden"),1250);
+}
+function reward(title,sub,final=false){
+  const r=$("reward");
+  r.innerHTML=`<div class="reward-card"><div class="reward-check">✓</div><strong>${esc(title)}</strong><span>${esc(sub)}</span></div>`;
+  r.classList.remove("hidden");
+  clearTimeout(rewardTimer);
+  rewardTimer=setTimeout(()=>{
+    r.classList.add("hidden");
+    r.innerHTML="";
+  },final?1350:850);
+}
+function updateStats(){
+  const ps=state.projects,active=ps.filter(p=>!p.completed).length,finished=ps.filter(p=>p.completed).length;
+  const average=ps.length?Math.round(ps.reduce((a,p)=>a+pct(p),0)/ps.length):0;
+  $("overallProgress").textContent=average+"%";$("overallBar").style.width=average+"%";
+  $("activeCount").textContent=active;$("finishedCount").textContent=finished;
+  $("plannedBudget").textContent=money(ps.reduce((a,p)=>a+p.budget,0));
+  $("summaryStatus").textContent=ps.length?`${active} ${active===1?(settings.language==="no"?"prosjekt":"project"):(settings.language==="no"?"prosjekter":"projects")} ${settings.language==="no"?"pågår":"in progress"}`:u("noProjects");
+}
+function renderHome(){
+  const h=$("home");
+  h.innerHTML=`<div class="home-header"><div><div class="brand"><span class="brand-mark"></span><span class="brand-name">BUILDFLOW</span></div><h1>Your projects</h1><p>Everything you're working toward, in one place.</p></div></div>
+  <div class="summary"><div class="summary-top"><div><div class="kicker">Overall progress</div><div class="summary-number" id="overallProgress">0%</div></div><div class="summary-status" id="summaryStatus">No projects yet</div></div><div class="summary-bar"><span id="overallBar"></span></div><div class="summary-stats"><div><strong id="activeCount">0</strong><span>In progress</span></div><div><strong id="finishedCount">0</strong><span>Finished</span></div><div><strong id="plannedBudget">€0</strong><span>Planned</span></div></div></div>
+  <div class="toolbar"><div class="tabs"><button class="tab ${view.homeTab==="active"?"active":""}" id="activeProjectsTab">In progress</button><button class="tab ${view.homeTab==="finished"?"active":""}" id="finishedProjectsTab">Finished</button></div><button class="sort" id="sortBtn">${view.sort==="recent"?"Recent":"Name"} <span>⌄</span></button></div>
+  <div class="grid" id="homeGrid"></div>`;
+  updateStats();
+  localizeRendered($("home"));
+  $("activeProjectsTab").onclick=()=>{view.homeTab="active";renderHome()};
+  $("finishedProjectsTab").onclick=()=>{view.homeTab="finished";renderHome()};
+  $("sortBtn").onclick=()=>{view.sort=view.sort==="recent"?"name":"recent";renderHome()};
+  $("settingsNav").onclick=openSettings;
+  const grid=$("homeGrid");
+  let ps=state.projects.filter(p=>view.homeTab==="finished"?p.completed:!p.completed);
+  ps.sort((a,b)=>{
+    if(!!b.priority!==!!a.priority)return b.priority?1:-1;
+    if(view.sort==="name")return a.name.localeCompare(b.name);
+    return (b.createdAt||0)-(a.createdAt||0);
+  });
+  if(!ps.length){
+    const empty=document.createElement("div");empty.className="empty";empty.innerHTML=view.homeTab==="finished"?'<strong>No finished projects</strong><span>Completed projects collect here.</span>':'<strong>Nothing in progress</strong><span>Start something with a clear finish line.</span>';grid.appendChild(empty);
+  }else{
+    ps.forEach(p=>{
+      const card=document.createElement("article");card.className="card"+(p.priority?" priority-card":"");
+      const d=p.steps.filter(s=>s.done).length,progress=pct(p);
+      card.innerHTML=`${p.priority?'<div class="priority-line"></div><div class="priority-label">PRIORITY</div>':''}<div class="cover ${esc(p.cover)}">${p.photo?`<img class="photo" src="${esc(p.photo)}" alt="">`:'<div class="no-photo"><span>No photo</span></div>'}${p.completed?'<div class="badge">✓</div>':''}</div><div class="body"><h3>${esc(p.name)}</h3><div class="meta"><span>${d}/${p.steps.length} steps</span><span>${progress}%</span></div><div class="card-progress"><span style="width:${progress}%"></span></div>${p.date?`<div class="date-meta"><span>${p.completed?"Finished":"Target"}</span><b>${esc(dateText(p.date))}</b></div>`:""}</div>`;
+      card.onclick=()=>openProject(p.id);grid.appendChild(card);
+    });
+  }
+  if(view.homeTab==="active"){
+    const add=document.createElement("button");add.className="create";add.innerHTML='<div><div class="plus">+</div><div class="label">Create new project</div></div>';add.onclick=openWizard;grid.appendChild(add);
+  }
+}
+
+function openSettings(){
+  showScreen("settings");
+  renderSettings();
+  window.scrollTo(0,0);
+}
+function renderSettings(){
+  $("settings").innerHTML=`<div class="settings-shell">
+    <div class="settings-head"><h1>${esc(t("settings"))}</h1><p>Keep the app in the format that works for you.</p></div>
+    <div class="settings-section">
+      <div class="settings-kicker">Preferences</div>
+      <div class="settings-row"><div class="settings-row-text"><div class="settings-row-title">${esc(t("currency"))}</div><div class="settings-row-sub">Used for budgets and shopping lists.</div></div><select class="settings-control" id="currencySelect">${CURRENCIES.map(([code,name])=>`<option value="${code}" ${code===settings.currency?"selected":""}>${code} · ${name}</option>`).join("")}</select></div>
+      <div class="settings-save-state">Changes save automatically on this device.</div>
+    </div>
+    <div class="settings-section">
+      <div class="settings-kicker">Data</div>
+      <button class="settings-danger" id="resetApp">${esc(t("reset"))}</button>
+      <div class="settings-reset-copy">Deletes all Buildflow projects and local settings from this browser, returning the app to a clean-install state.</div>
+    </div>
+  </div>`;
+  localizeRendered($("settings"));
+    $("currencySelect").onchange=ev=>{settings.currency=ev.target.value;saveSettings();renderSettings();renderHome()};
+  $("resetApp").onclick=()=>resetAppDialog();
+}
+function openProject(id){if(!pget(id))return;view.projectId=id;view.projectTab="overview";showScreen("project");renderProject();window.scrollTo(0,0)}
+function renderProject(){
+  const p=pget(view.projectId);if(!p){goHome();return}
+  const ps=$("project");const progress=pct(p),done=p.steps.filter(s=>s.done).length,total=p.materials.reduce((a,m)=>a+m.qty*m.price,0);
+  ps.innerHTML=`<div class="route"><button class="home-btn" id="projectHome" aria-label="Home">⌂</button><div class="route-wrap"><div class="route-kicker">Project</div><div class="route-name">${esc(p.name)}</div></div></div>
+  <div class="hero"><div class="hero-cover">${p.photo?`<img src="${esc(p.photo)}" alt="">`:'<div class="hero-empty">No photo added</div>'}</div><div class="hero-body"><h2>${esc(p.name)}</h2><p>${esc(p.details||p.description||"No project description yet.")}</p><div class="detail-date"><span>Target date</span><b>${esc(dateText(p.date))}</b></div><div class="detail-stats"><div class="detail-stat"><b>${progress}%</b><small>Progress</small></div><div class="detail-stat"><b>${done}/${p.steps.length}</b><small>Steps</small></div><div class="detail-stat"><b>${money(p.budget)}</b><small>Budget</small></div></div></div></div>
+  <div class="detail-tabs"><button class="detail-tab ${view.projectTab==="overview"?"active":""}" id="overviewTab">Overview</button><button class="detail-tab ${view.projectTab==="shopping"?"active":""}" id="shoppingTab">Shopping list</button></div>
+  <div id="overviewPanel" class="detail-panel ${view.projectTab==="overview"?"active":""}"></div>
+  <div id="shoppingPanel" class="detail-panel ${view.projectTab==="shopping"?"active":""}"></div>`;
+  renderOverview(p);renderShopping(p);showDetailTab(view.projectTab);
+  localizeRendered($("project"));
+  $("projectHome").onclick=goHome;
+  $("overviewTab").onclick=()=>showDetailTab("overview");
+  $("shoppingTab").onclick=()=>showDetailTab("shopping");
+}
+function renderOverview(p){
+  const op=$("overviewPanel"); const next=p.steps.findIndex(s=>!s.done);
+  op.innerHTML=`<div class="focus" id="focusCard"></div><div class="section-head"><h2>Steps</h2></div><div class="task-list" id="taskList"></div>
+  <div class="project-actions"><button id="editBtn" type="button">Edit project</button><button id="deleteBtn" class="danger" type="button">Delete project</button></div>`;
+  const focus=$("focusCard");
+  if(p.completed){
+    focus.innerHTML='<div class="kicker">Finished</div><div class="focus-title">Project complete.</div><div class="focus-sub">All steps are complete.</div>';
+  }else{
+    focus.innerHTML=`<div class="kicker">Up next</div><div class="focus-title">${esc(p.steps[next]?.text||"Add your first step")}</div><div class="focus-sub">${next>=0?`Step ${next+1} of ${p.steps.length}`:"Your project needs a step."}</div>${next>=0?'<button class="focus-btn" id="focusBtn">✓ &nbsp; Mark step complete</button>':""}`;
+    if(next>=0)$("focusBtn").onclick=()=>toggleStep(p.id,next);
+  }
+  const list=$("taskList");
+  p.steps.forEach((st,i)=>{
+    const row=document.createElement("div");row.className="task"+(st.done?" done":"");
+    row.innerHTML=`<button class="check ${st.done?"done":""}" type="button" aria-label="Complete step">${st.done?"✓":""}</button><div class="task-text">${esc(st.text)}</div>`;
+    row.querySelector(".check").onclick=()=>toggleStep(p.id,i);
+    list.appendChild(row);
+  });
+  $("editBtn").onclick=openEdit;
+  $("deleteBtn").onclick=openDelete;
+}
+function toggleStep(id,i){
+  const p=pget(id);if(!p)return;const wasAll=p.completed;p.steps[i].done=!p.steps[i].done;p.completed=p.steps.length>0&&p.steps.every(s=>s.done);if(p.completed&&!wasAll)p.priority=false;save();renderHome();renderProject();
+  if(p.steps[i].done){
+    const messages=["Checked off.","Step complete.","That's done.","Moving on.","Progress made."];
+    reward(p.completed&&!wasAll?"Project finished":messages[Math.floor(Math.random()*messages.length)],p.completed&&!wasAll?"All steps are complete.":`${p.steps.filter(s=>s.done).length}/${p.steps.length} steps complete.`,p.completed&&!wasAll);
+  }else toast("Step reopened.");
+}
+function renderShopping(p){
+  const sp=$("shoppingPanel");
+  const total=p.materials.reduce((a,m)=>a+m.qty*m.price,0);
+  const bought=p.materials.filter(m=>m.bought).length;
+  sp.innerHTML=`<div class="shopping">
+    <div class="shop-summary">
+      <div><small>Shopping list</small><strong>${money(total)}</strong></div>
+      <small>${bought}/${p.materials.length} bought</small>
+    </div>
+    <div class="materials" id="materials"></div>
+    <button class="shop-add" id="addMaterialBtn">＋ Add to shopping list</button>
+    <div class="costs">
+      <div class="cost"><span>Budget</span><b>${money(p.budget)}</b></div>
+      <div class="cost"><span>Shopping list</span><b>${money(total)}</b></div>
+      <div class="cost"><span>${total<=p.budget?"Remaining":"Over budget"}</span><b class="${total>p.budget?"over":""}">${money(Math.abs(p.budget-total))}</b></div>
+    </div>
+  </div>`;
+  const box=$("materials");
+  if(!p.materials.length){
+    box.innerHTML='<div class="empty" style="padding:28px 14px"><strong>Shopping list is empty</strong><span>Add the things you need for this project.</span></div>';
+  }else{
+    p.materials.forEach(m=>{
+      const row=document.createElement("div");
+      row.className="material"+(m.bought?" bought":"");
+      row.innerHTML=`<button class="shop-check ${m.bought?"done":""}" type="button" aria-label="Toggle bought">${m.bought?"✓":""}</button>
+      <div class="material-main"><div class="material-name">${esc(m.name)}</div><div class="material-info">${m.qty} × ${money(m.price)}</div></div>
+      <div class="material-total">${money(m.qty*m.price)}</div>
+      <div class="mini-actions"><button class="mini-action" type="button" aria-label="Edit item">✎</button><button class="mini-action" type="button" aria-label="Remove item">×</button></div>`;
+      row.querySelector(".shop-check").onclick=()=>toggleMaterial(m.id);
+      row.querySelectorAll(".mini-action")[0].onclick=()=>editMaterial(m.id);
+      row.querySelectorAll(".mini-action")[1].onclick=()=>removeMaterial(m.id);
+      box.appendChild(row);
+    });
+  }
+  $("addMaterialBtn").onclick=()=>materialDialog();
+}
+function toggleMaterial(id){const p=pget(view.projectId),m=p?.materials.find(x=>x.id===id);if(!m)return;m.bought=!m.bought;save();view.projectTab="shopping";renderProject();showDetailTab("shopping");showToast(m.bought?"Added to bought list.":"Moved back to shopping.");}
+function showDetailTab(tab){
+  view.projectTab=tab;
+  const overview=document.getElementById("overviewPanel");
+  const shopping=document.getElementById("shoppingPanel");
+  const ot=document.getElementById("overviewTab");
+  const st=document.getElementById("shoppingTab");
+  if(!overview||!shopping||!ot||!st)return;
+  const isShopping=tab==="shopping";
+  overview.classList.toggle("active",!isShopping);
+  shopping.classList.toggle("active",isShopping);
+  ot.classList.toggle("active",!isShopping);
+  st.classList.toggle("active",isShopping);
+  ot.setAttribute("aria-selected",String(!isShopping));
+  st.setAttribute("aria-selected",String(isShopping));
+}
+function materialDialog(existing=null){
+  dialogAction={type:existing?"editMaterial":"newMaterial",id:existing?.id||null};
+  $("dialog").innerHTML=`<div class="dialog"><h2>${existing?"Edit":"Add"} shopping item</h2><p>Keep the list simple. Add the item, quantity and price.</p><div class="dialog-fields"><input id="dName" placeholder="What do you need?" value="${existing?esc(existing.name):""}"><input id="dQty" type="number" min="0.01" step="0.01" value="${existing?existing.qty:1}" placeholder="Quantity"><input id="dPrice" type="number" min="0" step="0.01" value="${existing?existing.price:""}" placeholder="Price per item"></div><div class="dialog-actions"><button class="dialog-cancel" id="dialogCancel">Cancel</button><button class="dialog-save" id="dialogSave">${existing?"Save changes":"Add item"}</button></div></div>`;
+  $("dialog").classList.remove("hidden");localizeRendered($("dialog"));$("dialogCancel").onclick=closeDialog;$("dialogSave").onclick=saveMaterialDialog;requestAnimationFrame(()=>$("dName").focus());
+}
+function saveMaterialDialog(){
+  const name=$("dName").value.trim(),qty=Number($("dQty").value),price=Number($("dPrice").value);
+  if(!name||!Number.isFinite(qty)||qty<=0||!Number.isFinite(price)||price<0){toast("Enter a name, quantity and valid price.");return}
+  const p=pget(view.projectId);if(dialogAction.type==="editMaterial"){const m=p.materials.find(x=>x.id===dialogAction.id);if(m){m.name=name;m.qty=qty;m.price=price}}else p.materials.push({id:uid(),name,qty,price,bought:false});
+  save();closeDialog();renderProject();view.projectTab="shopping";renderProject();
+}
+function editMaterial(id){const p=pget(view.projectId),m=p?.materials.find(x=>x.id===id);if(m)materialDialog(m)}
+function removeMaterial(id){const p=pget(view.projectId);if(!p)return;confirmDialog("Remove item?","This removes it from the shopping list.",()=>{p.materials=p.materials.filter(m=>m.id!==id);save();renderProject();view.projectTab="shopping";renderProject()})}
+function addStepDialog(id){textDialog("Add step","Give the step a short, concrete name.","",value=>{if(!value.trim())return;const p=pget(id);p.steps.push({id:uid(),text:value.trim(),done:false});p.completed=false;save();renderProject();showDetailTab("overview")})}
+function editStep(id,i){const p=pget(id);textDialog("Edit step","Keep the step short and concrete.",p.steps[i].text,value=>{if(!value.trim())return;p.steps[i].text=value.trim();save();renderProject();showDetailTab("overview")})}
+function textDialog(title,hint,value,cb){
+  $("dialog").innerHTML=`<div class="dialog"><h2>${esc(title)}</h2><p>${esc(hint)}</p><div class="dialog-fields"><input id="textField" value="${esc(value)}" placeholder="Step name"></div><div class="dialog-actions"><button class="dialog-cancel" id="dialogCancel">Cancel</button><button class="dialog-save" id="dialogSave">Save</button></div></div>`;
+  $("dialog").classList.remove("hidden");$("dialogCancel").onclick=closeDialog;$("dialogSave").onclick=()=>{const v=$("textField").value;closeDialog();cb(v)};requestAnimationFrame(()=>$("textField").focus());
+}
+function resetAppDialog(){
+  $("dialog").innerHTML=`<div class="dialog">
+    <h2>Reset app?</h2>
+    <p>This permanently deletes all projects, profile data and local settings from this browser.</p>
+    <div class="reset-confirm-copy">Type <strong>RESET APP</strong> to confirm.</div>
+    <input id="resetConfirmInput" class="reset-confirm-input" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="RESET APP">
+    <div class="dialog-actions">
+      <button class="dialog-cancel" id="dialogCancel">Cancel</button>
+      <button class="dialog-save" id="dialogConfirm" type="button" disabled>Delete</button>
+    </div>
+  </div>`;
+  $("dialog").classList.remove("hidden");
+  $("dialogCancel").onclick=closeDialog;
+  const input=$("resetConfirmInput"),confirm=$("dialogConfirm");
+  const sync=()=>{
+    const ok=input.value.trim().toUpperCase()==="RESET APP";
+    confirm.disabled=!ok;
+  };
+  input.oninput=sync;
+  confirm.onclick=()=>{
+    if(input.value.trim().toUpperCase()!=="RESET APP")return;
+    closeDialog();
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(SETTINGS_KEY);
+    localStorage.removeItem(PROFILE_KEY);
+    location.reload();
+  };
+  requestAnimationFrame(()=>input.focus());
+}
+function confirmDialog(title,hint,cb){
+  $("dialog").innerHTML=`<div class="dialog"><h2>${esc(title)}</h2><p>${esc(hint)}</p><div class="dialog-actions"><button class="dialog-cancel" id="dialogCancel">Cancel</button><button class="dialog-save" id="dialogConfirm">Delete</button></div></div>`;
+  $("dialog").classList.remove("hidden");localizeRendered($("dialog"));$("dialogCancel").onclick=closeDialog;$("dialogConfirm").onclick=()=>{closeDialog();cb()};
+}
+function openDelete(){confirmDialog("Delete project?","This removes the project and its shopping list from this browser.",()=>{state.projects=state.projects.filter(p=>p.id!==view.projectId);save();goHome();toast("Project deleted.")})}
+function closeDialog(){$("dialog").classList.add("hidden");$("dialog").innerHTML="";dialogAction=null}
+function openWizard(){
+  wizard={step:1,name:"",details:"",steps:["",""],budget:"",date:"",category:"Personal",photo:"",priority:false};
+  showScreen("wizard");renderWizard();window.scrollTo(0,0)
+}
+function renderWizard(){
+  const d=wizard;
+  const titleMap={
+    1:["Start with the idea","Give your project a clear name."],
+    2:["Add the context","Add the details that will help later."],
+    3:["Plan the steps","Turn the project into a simple sequence."],
+    4:["Set the basics","Budget and target date are optional."],
+    5:["Make the project yours","Choose a photo and a category before you start."]
+  };
+  const [title,sub]=titleMap[d.step];
+  let content="";
+  if(d.step===1){
+    content=`<div class="create-section-label">Project</div>
+      <div class="create-field"><label class="create-label" for="wName">Project name</label><input id="wName" maxlength="50" autocomplete="off" placeholder="Build a workbench" value="${esc(d.name)}"></div>`;
+  }else if(d.step===2){
+    content=`<div class="create-section-label">Context</div>
+      <div class="create-field"><label class="create-label" for="wDetails">What are you making or doing?</label><textarea id="wDetails" placeholder="Describe the outcome, purpose, size, or anything useful.">${esc(d.details)}</textarea><div class="create-hint">You can edit this later.</div></div>`;
+  }else if(d.step===3){
+    content=`<div class="create-section-label">Steps</div>
+      <div class="create-steps" id="wSteps"></div>
+      <button class="create-add" id="wAddStep" type="button">＋ Add step</button>`;
+  }else if(d.step===4){
+    content=`<div class="create-section-label">Planning</div>
+      <div class="create-grid">
+        <div class="create-field"><label class="create-label" for="wBudget">Budget</label><input id="wBudget" type="number" min="0" step="1" inputmode="decimal" placeholder="300" value="${esc(d.budget)}"></div>
+        <div class="create-field"><label class="create-label" for="wDate">Target date</label><input id="wDate" type="date" value="${esc(d.date)}"></div>
+      </div>
+      <div class="create-hint">Both are optional. You can change them later.</div>`;
+  }else{
+    content=`<div class="create-section-label">Personalize</div>
+      <div class="create-field"><label class="create-label">Project photo <span style="color:var(--muted)">(optional)</span></label>
+        <div class="create-photo">
+          <div class="create-photo-preview">${d.photo?`<img src="${esc(d.photo)}" alt="">`:"No photo"}</div>
+          <div class="create-photo-copy"><strong>Use a photo of your project</strong><span>It becomes the project's visual identity on Home.</span>
+            <div class="create-photo-actions"><label class="create-mini primary" for="wPhoto">Add photo</label><button class="create-mini" id="wRemovePhoto" type="button">Remove</button><input id="wPhoto" type="file" accept="image/*" hidden></div>
+          </div>
+        </div>
+      </div>
+      <div class="create-field"><label class="create-label" for="wCategory">Project type</label>
+        <select id="wCategory">${["Personal","Creative","School","Home","Tech","Other"].map(x=>`<option ${x===d.category?"selected":""}>${x}</option>`).join("")}</select>
+        <div class="create-hint">Choose what fits this project best.</div>
+      </div>
+      <label class="priority-toggle"><input id="wPriority" type="checkbox" ${d.priority?"checked":""}><span class="priority-box"></span><span><strong>Priority project</strong><small>Keep this project at the top of your list.</small></span></label>`;
+  }
+
+  $("wizard").innerHTML=`<div class="route"><button class="home-btn" id="createHome" type="button" aria-label="Home">⌂</button><div class="route-wrap"><div class="route-kicker">New project</div><div class="route-name">${esc(title)}</div></div></div>
+  <div class="create-shell"><div class="create-head"><div class="create-head-top"><div class="create-step-label">Step ${d.step}</div><div class="create-counter">5 steps</div></div><h1>${esc(title)}</h1><p>${esc(sub)}</p><div class="create-dots">${[1,2,3,4,5].map(i=>`<i class="${i<=d.step?"on":""}"></i>`).join("")}</div></div><div class="create-body">${content}</div>
+  <div class="create-actions"><button class="create-back" id="wBack" type="button">${d.step===1?"Home":"← Back"}</button><button class="create-next" id="wNext" type="button">${d.step===5?"Create project":"Next →"}</button></div></div>`;
+
+  if(d.step===3)renderWizardSteps();
+  localizeRendered($("wizard"));
+
+  $("createHome").onclick=()=>{if(d.step===1)goHome();else{readWizard();d.step--;renderWizard()}};
+  $("wBack").onclick=()=>{if(d.step===1)goHome();else{readWizard();d.step--;renderWizard()}};
+  $("wNext").onclick=()=>{if(!validateWizard())return;if(d.step<5){readWizard();d.step++;renderWizard()}else{readWizard();createFromWizard()}};
+
+  if($("wAddStep"))$("wAddStep").onclick=()=>{
+    d.steps.push("");
+    renderWizardSteps();
+    requestAnimationFrame(()=>document.querySelector("#wSteps .create-step-row:last-child input")?.focus());
+  };
+  if($("wPhoto"))$("wPhoto").onchange=async ev=>{
+    const f=ev.target.files?.[0];if(!f)return;
+    try{d.photo=await resizeImage(f);renderWizard()}catch{toast("Couldn't use that photo.")}
+  };
+  if($("wRemovePhoto"))$("wRemovePhoto").onclick=()=>{d.photo="";renderWizard()};
+}
+function attachStepReorder(box,items,setItems,render){
+  if(!box)return;
+  box.querySelectorAll(".step-reorderable").forEach((row,index)=>{
+    let holdTimer=null,moveMode=false,startX=0,startY=0,lastY=0,targetIndex=index,pointerId=null;
+    const clearDrop=()=>{
+      box.querySelectorAll(".step-drop-target").forEach(r=>r.classList.remove("step-drop-target"));
+    };
+    const cancelHold=()=>{
+      if(holdTimer){clearTimeout(holdTimer);holdTimer=null}
+    };
+    const endMove=()=>{
+      cancelHold();
+      if(!moveMode)return;
+      const from=index;
+      const destination=Math.max(0,Math.min(targetIndex,items.length-1));
+      if(destination!==from){
+        const moved=items.splice(from,1)[0];
+        items.splice(destination,0,moved);
+        setItems(items);
+      }
+      moveMode=false;
+      row.classList.remove("step-moving");
+      clearDrop();
+      render();
+    };
+    row.addEventListener("pointerdown",ev=>{
+      if(ev.target.closest("input,button"))return;
+      pointerId=ev.pointerId;
+      startX=ev.clientX;startY=ev.clientY;lastY=ev.clientY;
+      cancelHold();
+      holdTimer=setTimeout(()=>{
+        moveMode=true;
+        row.classList.add("step-moving");
+        row.setPointerCapture?.(pointerId);
+      },320);
+    });
+    row.addEventListener("pointermove",ev=>{
+      if(!moveMode){
+        if(Math.abs(ev.clientY-startY)>8||Math.abs(ev.clientX-startX)>8)cancelHold();
+        return;
+      }
+      ev.preventDefault();
+      lastY=ev.clientY;
+      const rows=[...box.querySelectorAll(".step-reorderable")];
+      let candidate=0,bestDistance=Infinity;
+      rows.forEach((other,j)=>{
+        if(other===row)return;
+        const r=other.getBoundingClientRect(),center=r.top+r.height/2;
+        const distance=Math.abs(ev.clientY-center);
+        if(distance<bestDistance){bestDistance=distance;candidate=ev.clientY>center?j:j}
+      });
+      targetIndex=candidate;
+      clearDrop();
+      const target=rows[targetIndex];
+      if(target&&target!==row)target.classList.add("step-drop-target");
+    });
+    row.addEventListener("pointerup",ev=>{
+      if(!moveMode){
+        cancelHold();
+        return;
+      }
+      endMove();
+    });
+    row.addEventListener("pointercancel",()=>{
+      cancelHold();
+      if(moveMode){moveMode=false;row.classList.remove("step-moving");clearDrop();render()}
+    });
+  });
+}
+function renderWizardSteps(){
+  const box=$("wSteps");if(!box)return;
+  box.innerHTML="";
+  wizard.steps.forEach((text,i)=>{
+    const row=document.createElement("div");row.className="create-step-row step-reorderable";
+    row.innerHTML=`<span class="create-num">${i+1}</span><input type="text" aria-label="Step ${i+1}" placeholder="Step name" value="${esc(text)}"><button class="create-remove" type="button" aria-label="Remove step">×</button>`;
+    row.querySelector("input").oninput=ev=>wizard.steps[i]=ev.target.value;
+    row.onclick=ev=>{if(!ev.target.closest("input,button"))row.querySelector("input")?.focus()};
+    row.querySelector("button").onclick=()=>{wizard.steps.splice(i,1);renderWizardSteps()};
+    box.appendChild(row);
+  });
+  attachStepReorder(box,wizard.steps,items=>wizard.steps=items,renderWizardSteps);
+}
+function readWizard(){
+  if(wizard.step===1)wizard.name=$("wName").value.trim();
+  if(wizard.step===2)wizard.details=$("wDetails").value.trim();
+  if(wizard.step===4){wizard.budget=$("wBudget").value;wizard.date=$("wDate").value}
+  if(wizard.step===5){wizard.category=$("wCategory").value;wizard.priority=$("wPriority").checked}
+}
+function validateWizard(){
+  readWizard();
+  if(wizard.step===1&&!wizard.name){toast("Give the project a name.");$("wName").focus();return false}
+  if(wizard.step===3){
+    wizard.steps=wizard.steps.map(s=>s.trim()).filter(Boolean);
+    if(!wizard.steps.length){toast("Add at least one step.");return false}
+  }
+  if(wizard.step===4&&wizard.budget!==""&&(Number(wizard.budget)<0||!Number.isFinite(Number(wizard.budget)))){toast("Enter a valid budget.");return false}
+  return true;
+}
+function createFromWizard(){
+  const p={
+    id:uid(),
+    name:wizard.name.slice(0,50),
+    description:wizard.context||wizard.name,
+    details:wizard.details||wizard.context||"",
+    category:wizard.category,
+    date:wizard.date||"",
+    budget:Number(wizard.budget)||0,
+    priority:!!wizard.priority,
+    photo:wizard.photo||"",
+    cover:"sage",
+    createdAt:Date.now(),
+    completed:false,
+    steps:wizard.steps.map((text,i)=>({id:String(i+1),text,done:false})),
+    materials:[]
+  };
+  state.projects.push(p);save();view.projectId=p.id;showScreen("success");
+  $("success").innerHTML=`<div style="text-align:center;padding-top:100px"><div class="reward-check" style="margin-bottom:15px">✓</div><h1 style="font-size:28px;margin:0 0 8px">Project created</h1><p style="color:var(--muted);font-size:13px">Ready to get started.</p><button class="primary" id="openCreated" style="width:100%;height:52px;border:0;border-radius:13px;margin-top:20px;background:linear-gradient(180deg,#e7bd79,#d5a45f);color:#17140f;font-weight:760">Open project</button><button id="newProjectAfter" style="width:100%;height:52px;border:1px solid var(--line);border-radius:13px;background:#1d2520;color:#e8ede7;margin-top:9px">Create another</button></div>`;
+  $("openCreated").onclick=()=>openProject(p.id);$("newProjectAfter").onclick=openWizard;
+}
+function openEdit(){
+  const p=pget(view.projectId);if(!p)return;
+  editor={
+    name:p.name,
+    description:p.description,
+    details:p.details,
+    budget:String(p.budget??""),
+    date:p.date||"",
+    category:p.category||"Personal",
+    priority:!!p.priority,
+    photo:p.photo||"",
+    steps:p.steps.map(step=>({text:step.text,done:!!step.done}))
+  };
+  showScreen("editor");
+  renderEditor();
+  window.scrollTo(0,0);
+}
+function renderEditor(){
+  const d=editor;
+  $("editor").innerHTML=`
+    <div class="route">
+      <button class="home-btn" id="editorHome" type="button" aria-label="Home">⌂</button>
+      <div class="route-wrap">
+        <div class="route-kicker">Edit project</div>
+        <div class="route-name">${esc(d.name)}</div>
+      </div>
+    </div>
+
+    <div class="editor-shell">
+      <div class="editor-top">
+        <div class="kicker">Project details</div>
+        <h1>${esc(d.name)}</h1>
+        <p>Edit the project itself here. Completion progress and your existing steps are kept.</p>
+      </div>
+
+      <div class="editor-section">
+        <div class="editor-title">Basics</div>
+        <div class="editor-field">
+          <label class="editor-label" for="eName">Project name</label>
+          <input id="eName" maxlength="50" value="${esc(d.name)}" autocomplete="off">
+        </div>
+        <div class="editor-field">
+          <label class="editor-label" for="eDesc">Description</label>
+          <textarea id="eDesc" rows="3" placeholder="What is this project?">${esc(d.description)}</textarea>
+        </div>
+        <div class="editor-field">
+          <label class="editor-label" for="eDetails">Details</label>
+          <textarea id="eDetails" rows="4" placeholder="Useful details, size, goal or constraints">${esc(d.details)}</textarea>
+        </div>
+      </div>
+
+      <div class="editor-section">
+        <div class="editor-title">Project photo</div>
+        <div class="editor-photo">
+          <div class="editor-photo-preview" id="ePreview">
+            ${d.photo?`<img src="${esc(d.photo)}" alt="">`:"No photo"}
+          </div>
+          <div class="editor-photo-copy">
+            <strong>Use your own project photo</strong>
+            <span>A real photo makes the project easier to recognize in your project list.</span>
+            <div class="editor-photo-actions">
+              <label class="editor-mini primary" for="ePhoto">Change photo</label>
+              <button class="editor-mini" type="button" id="eNoPhoto">Remove</button>
+              <input id="ePhoto" type="file" accept="image/*" hidden>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="editor-section">
+        <div class="editor-steps-head">
+          <div class="editor-title" style="margin:0">Steps</div>
+          <div class="editor-count" id="eStepCount">${d.steps.length} ${d.steps.length===1?"step":"steps"}</div>
+        </div>
+        <div class="editor-list" id="eSteps"></div>
+        <button class="editor-add" id="eAdd" type="button">＋ Add step</button>
+      </div>
+
+      <div class="editor-section">
+        <div class="editor-title">Planning</div>
+        <div class="editor-meta">
+          <div class="editor-field">
+            <label class="editor-label" for="eBudget">Budget</label>
+            <input id="eBudget" type="number" min="0" step="1" inputmode="decimal" value="${esc(d.budget)}" placeholder="300">
+          </div>
+          <div class="editor-field">
+            <label class="editor-label" for="eDate">Target date</label>
+            <input id="eDate" type="date" value="${esc(d.date)}">
+          </div>
+        </div>
+        <div class="editor-field" style="margin-top:14px">
+          <label class="editor-label" for="eCategory">Category</label>
+          <div class="editor-select-wrap">
+            <select id="eCategory">${["Personal","Creative","School","Home","Tech","Other"].map(x=>`<option ${x===d.category?"selected":""}>${x}</option>`).join("")}</select>
+          </div>
+        </div>
+        <label class="priority-toggle"><input id="ePriority" type="checkbox" ${d.priority?"checked":""}><span class="priority-box"></span><span><strong>Priority project</strong><small>Keep this project at the top of your list.</small></span></label>
+      </div>
+
+      <div class="editor-savebar">
+        <button class="editor-cancel" id="eCancel" type="button">Cancel</button>
+        <button class="editor-save" id="eSave" type="button">Save changes</button>
+      </div>
+    </div>`;
+
+  renderEditorSteps();
+  localizeRendered($("editor"));
+  $("editorHome").onclick=goHome;
+  $("eCancel").onclick=()=>openProject(view.projectId);
+
+  $("eAdd").onclick=()=>{
+    editor.steps.push({text:"",done:false});
+    renderEditorSteps();
+    requestAnimationFrame(()=>{
+      const inputs=document.querySelectorAll("#eSteps input");
+      inputs[inputs.length-1]?.focus();
+    });
+  };
+
+  $("eSave").onclick=saveEdit;
+
+  $("eNoPhoto").onclick=()=>{
+    editor.photo="";
+    renderEditor();
+    requestAnimationFrame(()=>$("eName")?.focus());
+  };
+
+  $("ePhoto").onchange=async ev=>{
+    const f=ev.target.files?.[0];
+    if(!f)return;
+    try{
+      editor.photo=await resizeImage(f);
+      renderEditor();
+    }catch{
+      toast("Couldn't use that photo.");
+    }
+  };
+}
+function renderEditorSteps(){
+  const box=$("eSteps");
+  const count=$("eStepCount");
+  box.innerHTML="";
+  editor.steps.forEach((step,i)=>{
+    const row=document.createElement("div");
+    row.className="editor-row step-reorderable";
+    row.innerHTML=`<span class="editor-number">${i+1}</span><input type="text" aria-label="Step ${i+1}" placeholder="Step name" value="${esc(step.text)}"><button class="editor-delete" type="button" aria-label="Remove step">×</button>`;
+    row.querySelector("input").oninput=ev=>editor.steps[i].text=ev.target.value;
+    row.onclick=ev=>{if(!ev.target.closest("input,button"))row.querySelector("input")?.focus()};
+    row.querySelector("button").onclick=()=>{editor.steps.splice(i,1);renderEditorSteps()};
+    box.appendChild(row);
+  });
+  if(count)count.textContent=`${editor.steps.length} ${editor.steps.length===1?"step":"steps"}`;
+  attachStepReorder(box,editor.steps,items=>editor.steps=items,renderEditorSteps);
+}
+function saveEdit(){
+  const p=pget(view.projectId);
+  if(!p)return;
+
+  const name=$("eName").value.trim();
+  const steps=editor.steps.map(s=>({text:s.text.trim(),done:!!s.done})).filter(s=>s.text);
+
+  if(!name){toast("Give the project a name.");$("eName").focus();return}
+  if(!steps.length){toast("Add at least one step.");return}
+
+  p.name=name.slice(0,50);
+  p.description=$("eDesc").value.trim();
+  p.details=$("eDetails").value.trim();
+  p.budget=Math.max(0,Number($("eBudget").value)||0);
+  p.date=$("eDate").value||"";
+  p.category=$("eCategory").value;
+  p.priority=!!$("ePriority").checked;
+  p.photo=editor.photo||"";
+  p.steps=steps.map((step,i)=>({
+    id:p.steps[i]?.id||uid(),
+    text:step.text,
+    done:p.steps[i]?.done ?? step.done
+  }));
+  p.completed=p.steps.length>0&&p.steps.every(step=>step.done);
+
+  save();
+  renderHome();
+  openProject(p.id);
+  toast("Changes saved.");
+}
+function resizeImage(file,maxSide=1100,quality=.78){
+  return new Promise((resolve,reject)=>{const r=new FileReader();r.onerror=reject;r.onload=()=>{const img=new Image();img.onerror=reject;img.onload=()=>{const scale=Math.min(1,maxSide/Math.max(img.naturalWidth,img.naturalHeight));const c=document.createElement("canvas");c.width=Math.max(1,img.naturalWidth*scale);c.height=Math.max(1,img.naturalHeight*scale);c.getContext("2d").drawImage(img,0,0,c.width,c.height);resolve(c.toDataURL("image/jpeg",quality))};img.src=r.result};r.readAsDataURL(file)})
+}
+function uid(){return crypto.randomUUID?crypto.randomUUID():String(Date.now())+Math.random().toString(16).slice(2)}
+
+applyLanguage();
+$("homeNav").onclick=goHome;
+$("profileNav").onclick=openProfile;
+$("dialog").addEventListener("click",e=>{if(e.target.id==="dialog")closeDialog()});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("dialog").classList.contains("hidden"))closeDialog()});
+
+syncBottomNav("home");
+renderHome();
+</script>
+</main></div>
+
+<script>
+if("serviceWorker" in navigator){
+  window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}));
+}
+</script>
+</body>
+</html>
